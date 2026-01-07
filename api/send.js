@@ -15,9 +15,12 @@ async function getUsername(req) {
   const token = getCookie(req, "token");
   if (!token) return null;
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+  const secretValue = process.env.JWT_SECRET;
+  if (!secretValue) throw new Error("JWT_SECRET fehlt");
+
+  const secret = new TextEncoder().encode(secretValue);
   const { payload } = await jwtVerify(token, secret);
-  return String(payload.username);
+  return String(payload.username || "").trim().toLowerCase();
 }
 
 function normalizeEmail(s) {
@@ -29,6 +32,9 @@ function isValidEmail(s) {
 }
 
 export default async function handler(req, res) {
+  // ✅ nie cachen
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+
   if (req.method !== "POST") {
     return res.status(405).send("Method not allowed");
   }
@@ -45,6 +51,9 @@ export default async function handler(req, res) {
 
     const listKey = `emails:${username}`;
     const setKey  = `emailset:${username}`; // ✅ für Duplikat-Check
+
+    // ✅ wichtig für Admin "Alle Emails": User-Index pflegen
+    await kv.sadd("users", username);
 
     // ✅ Duplikat prüfen
     const exists = await kv.sismember(setKey, email);
