@@ -644,49 +644,114 @@
     }
 
     function renderAllEmails(items) {
-      listTitle.textContent = "Alle Emails";
-      countPill.textContent = "Emails: " + (items?.length || 0);
+  listTitle.textContent = "Alle Emails";
+  countPill.textContent = "Emails: " + (items?.length || 0);
 
-      if (!items || items.length === 0) {
-        listBox.innerHTML = `<div class="empty">Keine Emails gefunden.</div>`;
-        return;
+  if (!items || items.length === 0) {
+    listBox.innerHTML = `<div class="empty">Keine Emails gefunden.</div>`;
+    return;
+  }
+
+  const ul = document.createElement("ul");
+
+  for (const it of items) {
+    const li = document.createElement("li");
+
+    const left = document.createElement("div");
+    left.className = "left";
+
+    const email = document.createElement("div");
+    email.className = "email";
+    email.textContent = it.email;
+
+    const sub = document.createElement("div");
+    sub.className = "sub";
+    sub.textContent = "User: " + it.username;
+
+    left.appendChild(email);
+    left.appendChild(sub);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+
+    // ✅ used checkbox
+    const label = document.createElement("label");
+    label.style.display = "inline-flex";
+    label.style.alignItems = "center";
+    label.style.gap = "6px";
+    label.style.fontSize = "12px";
+    label.style.color = "#444";
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!it.used;
+
+    cb.addEventListener("change", async () => {
+      cb.disabled = true;
+      try {
+        await fetch("/api/admin?action=email-used", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: it.username, email: it.email, used: cb.checked })
+        });
+      } finally {
+        cb.disabled = false;
       }
+    });
 
-      const ul = document.createElement("ul");
-      for (const it of items) {
-        const li = document.createElement("li");
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode("benutzt"));
 
-        const left = document.createElement("div");
-        left.className = "left";
+    // 🗑 delete button
+    const del = document.createElement("button");
+    del.textContent = "Löschen";
+    del.className = "btn";
+    del.style.background = "#e53935";
+    del.style.padding = "8px 10px";
+    del.style.borderRadius = "10px";
+    del.style.fontSize = "12px";
 
-        const email = document.createElement("div");
-        email.className = "email";
-        email.textContent = it.email;
+    del.addEventListener("click", async () => {
+      const ok = confirm(`Email löschen?\n\n${it.email}\nUser: ${it.username}`);
+      if (!ok) return;
 
-        const sub = document.createElement("div");
-        sub.className = "sub";
-        sub.textContent = "User: " + it.username;
-
-        left.appendChild(email);
-        left.appendChild(sub);
-
-        const meta = document.createElement("div");
-        meta.className = "meta";
-
-        const timeSpan = document.createElement("span");
-        timeSpan.className = "time";
-        timeSpan.textContent = formatTime(it.ts);
-
-        meta.appendChild(timeSpan);
-
-        li.appendChild(left);
-        li.appendChild(meta);
-        ul.appendChild(li);
+      del.disabled = true;
+      try {
+        const res = await fetch("/api/admin?action=emails", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: it.username, email: it.email })
+        });
+        if (res.ok) {
+          // UI sofort aktualisieren
+          li.remove();
+          countPill.textContent = "Emails: " + (ul.querySelectorAll("li").length);
+        } else {
+          alert(await res.text());
+        }
+      } finally {
+        del.disabled = false;
       }
+    });
 
-      listBox.innerHTML = "";
-      listBox.appendChild(ul);
-    }
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "time";
+    timeSpan.textContent = formatTime(it.ts);
+
+    meta.appendChild(label);
+    meta.appendChild(timeSpan);
+    meta.appendChild(del);
+
+    li.appendChild(left);
+    li.appendChild(meta);
+    ul.appendChild(li);
+  }
+
+  listBox.innerHTML = "";
+  listBox.appendChild(ul);
+}
 
     async function loadAllEmails() {
       setLoading(true);
