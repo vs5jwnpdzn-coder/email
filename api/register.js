@@ -8,41 +8,47 @@ function setAuthCookie(res, token) {
   ]);
 }
 
+async function readJson(req) {
+  // Falls Vercel schon geparst hat
+  if (req.body && typeof req.body === "object") return req.body;
+
+  // Robust: raw body lesen
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString("utf8");
+  if (!raw) return {};
+  return JSON.parse(raw);
+}
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed");
-  }
-
-  const { username, password, confirm } = req.body || {};
-  const u = String(username || "").trim().toLowerCase();
-  const p = String(password || "");
-  const c = String(confirm || "");
-
-  // Basic Validierung
-  if (!u || !p || !c) return res.status(400).send("Bitte alle Felder ausfüllen.");
-  if (p !== c) return res.status(400).send("Passwörter stimmen nicht überein.");
-  if (u.length < 3) return res.status(400).send("Benutzername muss mind. 3 Zeichen haben.");
-  if (/\s/.test(u)) return res.status(400).send("Benutzername darf keine Leerzeichen enthalten.");
-  if (p.length < 8) return res.status(400).send("Passwort muss mind. 8 Zeichen haben.");
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   try {
-    const key = `user:${u}`;
+    const body = await readJson(req);
 
-    // Username schon vergeben?
+    const { username, password, confirm } = body || {};
+    const u = String(username || "").trim().toLowerCase();
+    const p = String(password || "");
+    const c = String(confirm || "");
+
+    if (!u || !p || !c) return res.status(400).send("Bitte alle Felder ausfüllen.");
+    if (p !== c) return res.status(400).send("Passwörter stimmen nicht überein.");
+    if (u.length < 3) return res.status(400).send("Benutzername muss mind. 3 Zeichen haben.");
+    if (/\s/.test(u)) return res.status(400).send("Benutzername darf keine Leerzeichen enthalten.");
+    if (p.length < 8) return res.status(400).send("Passwort muss mind. 8 Zeichen haben.");
+
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).send("JWT_SECRET fehlt in Vercel Env Vars.");
+    }
+
+    const key = `user:${u}`;
     const exists = await kv.get(key);
     if (exists) return res.status(409).send("Benutzername ist bereits vergeben.");
 
-    // Passwort hashen + speichern
     const hash = await bcrypt.hash(p, 12);
     await kv.set(key, { username: u, hash });
 
-    const secretValue = process.env.JWT_SECRET;
-    if (!secretValue) {
-      return res.status(500).send("Server ist nicht konfiguriert (JWT_SECRET fehlt).");
-    }
-    const secret = new TextEncoder().encode(secretValue);
-
-    // Direkt einloggen (Cookie setzen)
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const token = await new SignJWT({ username: u })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
@@ -53,6 +59,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
 
   } catch (err) {
-    return res.status(500).send("Serverfehler.");
+    console.error("REGISTER ERROR:", err);
+    // Debug: echte Ursache zurückgeben
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }
