@@ -3,6 +3,8 @@ export const config = { runtime: "nodejs" };
 import { kv } from "@vercel/kv";
 import { jwtVerify } from "jose";
 
+/* ================= Helpers ================= */
+
 function getCookie(req, name) {
   const cookie = req.headers.cookie || "";
   const parts = cookie.split(";").map(p => p.trim());
@@ -26,29 +28,17 @@ async function requireAdmin(req) {
 
 async function readJson(req) {
   if (req.body && typeof req.body === "object") return req.body;
-
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  for await (const c of req) chunks.push(c);
   const raw = Buffer.concat(chunks).toString("utf8").trim();
   if (!raw) return {};
   try { return JSON.parse(raw); } catch { return {}; }
 }
 
-function normalizeUsername(u) {
-  return String(u || "").trim().toLowerCase();
-}
-
-function isValidUsername(u) {
-  return /^[a-z0-9_-]{3,20}$/.test(u);
-}
-
-function normalizeEmail(e) {
-  return String(e || "").trim().toLowerCase();
-}
-
-function isValidEmail(e) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-}
+const normalizeUsername = u => String(u || "").trim().toLowerCase();
+const normalizeEmail = e => String(e || "").trim().toLowerCase();
+const isValidUsername = u => /^[a-z0-9_-]{3,20}$/.test(u);
+const isValidEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 function parseEuro(x) {
   const s = String(x || "").trim().replace(",", ".");
@@ -58,38 +48,21 @@ function parseEuro(x) {
 }
 
 function parseEmailItem(item) {
-  // supports stringified JSON OR plain string OR object
-  if (item && typeof item === "object") {
-    const email = normalizeEmail(item.email);
-    if (typeof item.email === "string" && isValidEmail(email)) {
-      const ts = (typeof item.ts === "number") ? item.ts : null;
-      return { email, ts };
-    }
-    return null;
-  }
-
   if (typeof item === "string") {
-    // try JSON
     try {
       const p = JSON.parse(item);
-      if (p && typeof p.email === "string") {
-        const email = normalizeEmail(p.email);
-        if (!isValidEmail(email)) return null;
-        const ts = (typeof p.ts === "number") ? p.ts : null;
-        return { email, ts };
+      if (p && typeof p.email === "string" && isValidEmail(p.email)) {
+        return { email: normalizeEmail(p.email), ts: p.ts ?? null };
       }
     } catch {}
-
-    // plain
-    const email = normalizeEmail(item);
-    if (isValidEmail(email)) return { email, ts: null };
   }
-
   return null;
 }
 
+/* ================= Handler ================= */
+
 export default async function handler(req, res) {
-  // ✅ WICHTIG: nie cachen (sonst “kommt nix an”, obwohl KV schon geschrieben hat)
+  // ❗ wichtig auf Vercel (sonst alte Responses)
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
 
   const admin = await requireAdmin(req);
@@ -99,56 +72,47 @@ export default async function handler(req, res) {
     const url = new URL(req.url, "http://localhost");
     const action = (url.searchParams.get("action") || "").trim();
 
-    // --------------------
-    // GET users
-    // --------------------
+    /* ---------- USERS ---------- */
     if (req.method === "GET" && action === "users") {
       const users = await kv.smembers("users");
-      const list = (users || [])
-        .filter(u => typeof u === "string" && u.trim())
-        .map(u => u.trim().toLowerCase())
-        .sort();
-
-      return res.status(200).json({ ok: true, users: list });
+      return res.status(200).json({
+        ok: true,
+        users: (users || []).map(u => String(u).toLowerCase()).sort()
+      });
     }
 
-    // --------------------
-    // GET emails for user
-    // --------------------
+    /* ---------- EMAILS OF USER ---------- */
     if (req.method === "GET" && action === "emails") {
       const username = normalizeUsername(url.searchParams.get("username"));
       if (!username) return res.status(400).send("username fehlt");
 
       const raw = await kv.lrange(`emails:${username}`, 0, -1);
-
       const emails = [];
+
       for (const item of raw || []) {
         const parsed = parseEmailItem(item);
         if (parsed) emails.push(parsed);
       }
 
-      emails.sort((a, b) => (b.ts ?? -1) - (a.ts ?? -1));
+      emails.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0));
       return res.status(200).json({ ok: true, emails });
     }
 
-    // --------------------
-    // DELETE one email for user
-    // Body: { username, email }
-    // --------------------
+    /* ---------- DELETE ONE EMAIL ---------- */
     if (req.method === "DELETE" && action === "emails") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
       const email = normalizeEmail(body.email);
 
       if (!username) return res.status(400).send("username fehlt");
-      if (!email || !isValidEmail(email)) return res.status(400).send("email fehlt/ungültig");
+      if (!email || !isValidEmail(email)) return res.status(400).send("email ungültig");
 
       const listKey = `emails:${username}`;
       const setKey = `emailset:${username}`;
 
       const raw = await kv.lrange(listKey, 0, -1);
-
       let removed = 0;
+
       for (const item of raw || []) {
         const parsed = parseEmailItem(item);
         if (parsed && parsed.email === email) {
@@ -161,200 +125,151 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, removed });
     }
 
-    // --------------------
-    // DELETE clear all emails (keep account)
-    // Body: { username }
-    // --------------------
+    /* ---------- CLEAR ALL EMAILS ---------- */
     if (req.method === "DELETE" && action === "clear-emails") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
       if (!username) return res.status(400).send("username fehlt");
 
-      const listKey = `emails:${username}`;
-      const setKey = `emailset:${username}`;
+      const count = await kv.llen(`emails:${username}`).catch(() => 0);
+      await kv.del(`emails:${username}`);
+      await kv.del(`emailset:${username}`);
 
-      let before = 0;
-      try { before = await kv.llen(listKey); } catch { before = 0; }
-
-      await kv.del(listKey);
-      await kv.del(setKey);
-
-      return res.status(200).json({ ok: true, username, deletedEmails: before });
+      return res.status(200).json({ ok: true, deletedEmails: count });
     }
 
-    // --------------------
-    // GET all-emails
-    // --------------------
+    /* ---------- ALL EMAILS ---------- */
     if (req.method === "GET" && action === "all-emails") {
-      const limit = Math.max(1, Math.min(5000, parseInt(url.searchParams.get("limit") || "1000", 10)));
-
       const users = await kv.smembers("users");
-      const usernames = (users || [])
-        .filter(u => typeof u === "string" && u.trim())
-        .map(u => u.trim().toLowerCase());
-
       const all = [];
-      for (const username of usernames) {
+
+      for (const u of users || []) {
+        const username = normalizeUsername(u);
         const raw = await kv.lrange(`emails:${username}`, 0, -1);
         for (const item of raw || []) {
           const parsed = parseEmailItem(item);
-          if (!parsed) continue;
-          all.push({ username, email: parsed.email, ts: parsed.ts });
+          if (parsed) all.push({ username, ...parsed });
         }
       }
 
-      all.sort((a, b) => (b.ts ?? -1) - (a.ts ?? -1));
-
-      return res.status(200).json({
-        ok: true,
-        total: all.length,
-        emails: all.slice(0, limit)
-      });
+      all.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0));
+      return res.status(200).json({ ok: true, emails: all });
     }
 
-    // --------------------
-    // ✅ GET inbox of a user (ADMIN DEBUG)
-    // /api/admin?action=inbox&username=bonez
-    // --------------------
+    /* ---------- ADMIN INBOX DEBUG ---------- */
     if (req.method === "GET" && action === "inbox") {
       const username = normalizeUsername(url.searchParams.get("username"));
       if (!username) return res.status(400).send("username fehlt");
 
       const key = `inbox:${username}`;
       const raw = await kv.lrange(key, 0, 200);
-
       const messages = [];
+
       for (const item of raw || []) {
-        if (typeof item !== "string") continue;
         try {
-          const parsed = JSON.parse(item);
-          if (parsed && typeof parsed.text === "string") messages.push(parsed);
+          const p = JSON.parse(item);
+          if (p && p.text) messages.push(p);
         } catch {}
       }
 
-      return res.status(200).json({ ok: true, username, key, count: messages.length, messages });
+      return res.status(200).json({
+        ok: true,
+        username,
+        key,
+        count: messages.length,
+        messages
+      });
     }
 
-    // --------------------
-    // POST notify (payout msg) -> inbox:<username>
-    // Body: { username, euro }
-    // --------------------
+    /* ---------- NOTIFY (POST) ---------- */
     if (req.method === "POST" && action === "notify") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
       const euro = parseEuro(body.euro);
 
       if (!username) return res.status(400).send("username fehlt");
-      if (euro === null) return res.status(400).send("Bitte gültigen Euro-Betrag eingeben.");
+      if (euro === null) return res.status(400).send("Betrag ungültig");
 
       const user = await kv.get(`user:${username}`);
-      if (!user) return res.status(404).send("User nicht gefunden.");
+      if (!user) return res.status(404).send("User nicht gefunden");
 
-      const text = `Du bekommst für eine deiner Emails ${euro} Euro. Herzlichen Glückwunsch.`;
-
-      const msg = { type: "payout", euro, text, ts: Date.now(), from: "admin" };
       const key = `inbox:${username}`;
+      const msg = {
+        type: "payout",
+        euro,
+        text: `Du bekommst für eine deiner Emails ${euro} Euro. Herzlichen Glückwunsch.`,
+        ts: Date.now(),
+        from: "admin"
+      };
 
       await kv.lpush(key, JSON.stringify(msg));
-
-      // ✅ Debug: sofort prüfen ob es wirklich drin liegt
       const len = await kv.llen(key).catch(() => null);
 
-      return res.status(200).json({ ok: true, debug: { username, key, inboxLen: len } });
+      return res.status(200).json({ ok: true, debug: { username, inboxLen: len } });
     }
 
-    // --------------------
-    // DELETE user (remove account + emails + sets + inbox + users set)
-    // Body: { username }
-    // --------------------
+    /* ---------- NOTIFY TEST (GET) ---------- */
+    if (req.method === "GET" && action === "notify-test") {
+      const username = normalizeUsername(url.searchParams.get("username"));
+      const euro = parseEuro(url.searchParams.get("euro"));
+
+      if (!username) return res.status(400).send("username fehlt");
+      if (euro === null) return res.status(400).send("euro fehlt");
+
+      const key = `inbox:${username}`;
+      await kv.lpush(key, JSON.stringify({
+        type: "payout",
+        euro,
+        text: `Du bekommst für eine deiner Emails ${euro} Euro. Herzlichen Glückwunsch.`,
+        ts: Date.now(),
+        from: "admin"
+      }));
+
+      const len = await kv.llen(key).catch(() => null);
+      return res.status(200).json({ ok: true, debug: { username, inboxLen: len } });
+    }
+
+    /* ---------- DELETE USER ---------- */
     if (req.method === "DELETE" && action === "user") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
 
       if (!username) return res.status(400).send("username fehlt");
-      if (username === "gzuz") return res.status(403).send("Admin-User kann nicht gelöscht werden.");
+      if (username === "gzuz") return res.status(403).send("Admin kann nicht gelöscht werden");
 
-      const userKey = `user:${username}`;
-      const listKey = `emails:${username}`;
-      const setKey = `emailset:${username}`;
-      const inboxKey = `inbox:${username}`;
-
-      const exists = await kv.get(userKey);
-      if (!exists) return res.status(404).send("User nicht gefunden.");
-
-      let emailCount = 0;
-      try { emailCount = await kv.llen(listKey); } catch { emailCount = 0; }
-
-      await kv.del(userKey);
-      await kv.del(listKey);
-      await kv.del(setKey);
-      await kv.del(inboxKey);
+      await kv.del(`user:${username}`);
+      await kv.del(`emails:${username}`);
+      await kv.del(`emailset:${username}`);
+      await kv.del(`inbox:${username}`);
       await kv.srem("users", username);
 
-      return res.status(200).json({ ok: true, username, deletedEmails: emailCount });
+      return res.status(200).json({ ok: true });
     }
 
-    // --------------------
-    // PATCH user rename
-    // Body: { oldUsername, newUsername }
-    // --------------------
+    /* ---------- RENAME USER ---------- */
     if (req.method === "PATCH" && action === "user") {
       const body = await readJson(req);
-      const oldUsername = normalizeUsername(body.oldUsername);
-      const newUsername = normalizeUsername(body.newUsername);
+      const oldU = normalizeUsername(body.oldUsername);
+      const newU = normalizeUsername(body.newUsername);
 
-      if (!oldUsername || !newUsername) return res.status(400).send("oldUsername/newUsername fehlt");
-      if (oldUsername === "gzuz") return res.status(403).send("Admin-User kann nicht umbenannt werden.");
-      if (oldUsername === newUsername) return res.status(400).send("Username ist identisch.");
-      if (!isValidUsername(newUsername)) return res.status(400).send("Neuer Username ungültig (3–20 Zeichen, a-z 0-9 _ -).");
+      if (!oldU || !newU) return res.status(400).send("user fehlt");
+      if (!isValidUsername(newU)) return res.status(400).send("neuer Username ungültig");
 
-      const oldUserKey = `user:${oldUsername}`;
-      const newUserKey = `user:${newUsername}`;
+      const user = await kv.get(`user:${oldU}`);
+      if (!user) return res.status(404).send("User nicht gefunden");
+      if (await kv.get(`user:${newU}`)) return res.status(409).send("Username vergeben");
 
-      const oldUser = await kv.get(oldUserKey);
-      if (!oldUser) return res.status(404).send("Alter User nicht gefunden.");
+      await kv.set(`user:${newU}`, { ...user, username: newU });
+      await kv.del(`user:${oldU}`);
 
-      const newExists = await kv.get(newUserKey);
-      if (newExists) return res.status(409).send("Neuer Username ist bereits vergeben.");
+      await kv.rename(`emails:${oldU}`, `emails:${newU}`);
+      await kv.rename(`emailset:${oldU}`, `emailset:${newU}`);
+      await kv.rename(`inbox:${oldU}`, `inbox:${newU}`);
 
-      // move user obj
-      await kv.set(newUserKey, { ...(oldUser || {}), username: newUsername });
+      await kv.srem("users", oldU);
+      await kv.sadd("users", newU);
 
-      // move emails list
-      const oldEmailsKey = `emails:${oldUsername}`;
-      const newEmailsKey = `emails:${newUsername}`;
-      const rawEmails = await kv.lrange(oldEmailsKey, 0, -1);
-      const movedEmails = (rawEmails || []).length;
-
-      await kv.del(newEmailsKey);
-      if (rawEmails && rawEmails.length) await kv.rpush(newEmailsKey, ...rawEmails);
-
-      // move emailset
-      const oldSetKey = `emailset:${oldUsername}`;
-      const newSetKey = `emailset:${newUsername}`;
-      const setMembers = await kv.smembers(oldSetKey);
-
-      await kv.del(newSetKey);
-      if (setMembers && setMembers.length) await kv.sadd(newSetKey, ...setMembers);
-
-      // move inbox
-      const oldInboxKey = `inbox:${oldUsername}`;
-      const newInboxKey = `inbox:${newUsername}`;
-      const rawInbox = await kv.lrange(oldInboxKey, 0, -1);
-      await kv.del(newInboxKey);
-      if (rawInbox && rawInbox.length) await kv.rpush(newInboxKey, ...rawInbox);
-
-      // delete old keys
-      await kv.del(oldUserKey);
-      await kv.del(oldEmailsKey);
-      await kv.del(oldSetKey);
-      await kv.del(oldInboxKey);
-
-      // update users set
-      await kv.srem("users", oldUsername);
-      await kv.sadd("users", newUsername);
-
-      return res.status(200).json({ ok: true, oldUsername, newUsername, movedEmails });
+      return res.status(200).json({ ok: true });
     }
 
     return res.status(400).send("Unknown action");
