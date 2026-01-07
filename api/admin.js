@@ -59,7 +59,6 @@ function parseEuro(x) {
 }
 
 function parseEmailItem(item) {
-  // supports stringified JSON OR plain string OR object
   if (item && typeof item === "object") {
     const email = normalizeEmail(item.email);
     if (typeof item.email === "string" && isValidEmail(email)) {
@@ -70,7 +69,6 @@ function parseEmailItem(item) {
   }
 
   if (typeof item === "string") {
-    // try JSON
     try {
       const p = JSON.parse(item);
       if (p && typeof p.email === "string") {
@@ -81,7 +79,6 @@ function parseEmailItem(item) {
       }
     } catch {}
 
-    // plain
     const email = normalizeEmail(item);
     if (isValidEmail(email)) return { email, ts: null };
   }
@@ -90,13 +87,11 @@ function parseEmailItem(item) {
 }
 
 function usedKey(username, email) {
-  // einheitlicher KV-key für “used”
   return `used:${username}:${email}`;
 }
 
 /* ---------- handler ---------- */
 export default async function handler(req, res) {
-  // wichtig gegen caching
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
 
   const admin = await requireAdmin(req);
@@ -106,9 +101,6 @@ export default async function handler(req, res) {
     const url = new URL(req.url, "http://localhost");
     const action = (url.searchParams.get("action") || "").trim();
 
-    // --------------------
-    // GET users
-    // --------------------
     if (req.method === "GET" && action === "users") {
       const users = await kv.smembers("users");
       const list = (users || [])
@@ -119,9 +111,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, users: list });
     }
 
-    // --------------------
-    // GET emails for user
-    // --------------------
     if (req.method === "GET" && action === "emails") {
       const username = normalizeUsername(url.searchParams.get("username"));
       if (!username) return res.status(400).send("username fehlt");
@@ -139,10 +128,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, emails });
     }
 
-    // --------------------
-    // DELETE one email for user
-    // Body: { username, email }
-    // --------------------
     if (req.method === "DELETE" && action === "emails") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
@@ -166,15 +151,11 @@ export default async function handler(req, res) {
       }
 
       await kv.srem(setKey, email);
-      await kv.del(usedKey(username, email)); // used-flag löschen
+      await kv.del(usedKey(username, email));
 
       return res.status(200).json({ ok: true, removed });
     }
 
-    // --------------------
-    // DELETE clear all emails (keep account)
-    // Body: { username }
-    // --------------------
     if (req.method === "DELETE" && action === "clear-emails") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
@@ -186,7 +167,6 @@ export default async function handler(req, res) {
       let before = 0;
       try { before = await kv.llen(listKey); } catch { before = 0; }
 
-      // used-keys cleanup (best effort)
       try {
         const raw = await kv.lrange(listKey, 0, -1);
         for (const item of raw || []) {
@@ -201,10 +181,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, username, deletedEmails: before });
     }
 
-    // --------------------
-    // PATCH email-used
-    // Body: { username, email, used: true/false }
-    // --------------------
     if (req.method === "PATCH" && action === "email-used") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
@@ -214,7 +190,6 @@ export default async function handler(req, res) {
       if (!username) return res.status(400).send("username fehlt");
       if (!email || !isValidEmail(email)) return res.status(400).send("email fehlt/ungültig");
 
-      // optional: prüfen ob email wirklich existiert
       const exists = await kv.sismember(`emailset:${username}`, email).catch(() => null);
       if (exists === 0) return res.status(404).send("Email existiert nicht (mehr).");
 
@@ -226,9 +201,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, username, email, used });
     }
 
-    // --------------------
-    // GET all-emails (+ used)
-    // --------------------
     if (req.method === "GET" && action === "all-emails") {
       const limit = Math.max(1, Math.min(5000, parseInt(url.searchParams.get("limit") || "1000", 10)));
 
@@ -244,7 +216,6 @@ export default async function handler(req, res) {
           const parsed = parseEmailItem(item);
           if (!parsed) continue;
 
-          // used laden
           const used = await kv.get(usedKey(username, parsed.email)).catch(() => null);
 
           all.push({
@@ -265,10 +236,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // --------------------
-    // POST notify (payout msg) -> inbox:<username>
-    // Body: { username, euro }
-    // --------------------
     if (req.method === "POST" && action === "notify") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
@@ -288,10 +255,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // --------------------
-    // DELETE user (remove account + emails + sets + inbox + users set)
-    // Body: { username }
-    // --------------------
     if (req.method === "DELETE" && action === "user") {
       const body = await readJson(req);
       const username = normalizeUsername(body.username);
@@ -307,7 +270,6 @@ export default async function handler(req, res) {
       const exists = await kv.get(userKey);
       if (!exists) return res.status(404).send("User nicht gefunden.");
 
-      // used keys cleanup (best effort)
       try {
         const raw = await kv.lrange(listKey, 0, -1);
         for (const item of raw || []) {
@@ -328,10 +290,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, username, deletedEmails: emailCount });
     }
 
-    // --------------------
-    // PATCH user rename
-    // Body: { oldUsername, newUsername }
-    // --------------------
     if (req.method === "PATCH" && action === "user") {
       const body = await readJson(req);
       const oldUsername = normalizeUsername(body.oldUsername);
@@ -353,7 +311,6 @@ export default async function handler(req, res) {
 
       await kv.set(newUserKey, { ...(oldUser || {}), username: newUsername });
 
-      // move emails list
       const oldEmailsKey = `emails:${oldUsername}`;
       const newEmailsKey = `emails:${newUsername}`;
       const rawEmails = await kv.lrange(oldEmailsKey, 0, -1);
@@ -362,7 +319,6 @@ export default async function handler(req, res) {
       await kv.del(newEmailsKey);
       if (rawEmails && rawEmails.length) await kv.rpush(newEmailsKey, ...rawEmails);
 
-      // move emailset
       const oldSetKey = `emailset:${oldUsername}`;
       const newSetKey = `emailset:${newUsername}`;
       const setMembers = await kv.smembers(oldSetKey);
@@ -370,7 +326,6 @@ export default async function handler(req, res) {
       await kv.del(newSetKey);
       if (setMembers && setMembers.length) await kv.sadd(newSetKey, ...setMembers);
 
-      // move used flags (best effort)
       try {
         for (const item of rawEmails || []) {
           const parsed = parseEmailItem(item);
@@ -383,20 +338,17 @@ export default async function handler(req, res) {
         }
       } catch {}
 
-      // move inbox
       const oldInboxKey = `inbox:${oldUsername}`;
       const newInboxKey = `inbox:${newUsername}`;
       const rawInbox = await kv.lrange(oldInboxKey, 0, -1);
       await kv.del(newInboxKey);
       if (rawInbox && rawInbox.length) await kv.rpush(newInboxKey, ...rawInbox);
 
-      // delete old keys
       await kv.del(oldUserKey);
       await kv.del(oldEmailsKey);
       await kv.del(oldSetKey);
       await kv.del(oldInboxKey);
 
-      // update users set
       await kv.srem("users", oldUsername);
       await kv.sadd("users", newUsername);
 

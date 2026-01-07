@@ -202,7 +202,8 @@
       word-break: break-word;
     }
 
-    .left { min-width: 0; }
+    /* ✅ LAYOUT-FIX: links flexibel, rechts stabil (kein Verrutschen) */
+    .left { flex: 1; min-width: 0; }
     .email {
       color: #111;
       overflow: hidden;
@@ -213,7 +214,14 @@
     }
     .sub { color: #666; font-size: 12px; margin-top: 4px; }
 
-    .meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .meta {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+      min-width: 260px;      /* ✅ rechte Spalte immer gleich breit */
+    }
     .time { color: #666; font-size: 12px; white-space: nowrap; }
 
     .empty {
@@ -237,6 +245,27 @@
     }
 
     .hide { display: none; }
+
+    /* ✅ Kleine Helferklassen */
+    .usedLabel {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: #444;
+      white-space: nowrap;
+    }
+
+    .btnSmall {
+      background: #e53935;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    .btnSmall:disabled { opacity: 0.55; cursor: not-allowed; }
   </style>
 </head>
 
@@ -292,19 +321,20 @@
         <p class="hint">Alle gespeicherten Emails zusammen – jeweils mit Username.</p>
 
         <div class="controls">
-          <div style="display:grid; grid-template-columns: 1fr 220px 220px; gap:10px;">
-  <input id="allSearchInput" type="text" placeholder="Suche (Email/User) …" autocomplete="off" />
+          <!-- Suche + Domain -->
+          <div style="display:grid; grid-template-columns: 1fr 220px; gap:10px;">
+            <input id="allSearchInput" type="text" placeholder="Suche (Email/User) …" autocomplete="off" />
+            <select id="domainSelect" disabled>
+              <option value="">Domain: alle</option>
+            </select>
+          </div>
 
-  <select id="domainSelect" disabled>
-    <option value="">Domain: alle</option>
-  </select>
-
-  <select id="usedSelect" disabled>
-    <option value="">Status: alle</option>
-    <option value="used">nur benutzt</option>
-    <option value="unused">nur unbenutzt</option>
-  </select>
-</div>
+          <!-- ✅ Benutzt Filter -->
+          <select id="usedSelect" disabled>
+            <option value="">Benutzt: alle</option>
+            <option value="used">nur benutzt</option>
+            <option value="unused">nur unbenutzt</option>
+          </select>
 
           <div class="btnGrid" style="grid-template-columns: 1fr;">
             <button class="btn btn-load" id="loadAllBtn">Aktualisieren</button>
@@ -689,26 +719,24 @@
     }
 
     function applyAllFilters() {
-  const q = (allSearchInput.value || "").trim().toLowerCase();
-  const dom = (domainSelect.value || "").trim().toLowerCase();
-  const usedMode = (usedSelect.value || "").trim(); // "", "used", "unused"
+      const q = (allSearchInput.value || "").trim().toLowerCase();
+      const dom = (domainSelect.value || "").trim().toLowerCase();
+      const usedMode = (usedSelect.value || "").trim(); // "", "used", "unused"
 
-  let filtered = allEmailsCache;
+      let filtered = allEmailsCache;
 
-  if (dom) filtered = filtered.filter(it => getDomain(it.email) === dom);
+      if (dom) filtered = filtered.filter(it => getDomain(it.email) === dom);
 
-  if (usedMode === "used") {
-    filtered = filtered.filter(it => !!it.used);
-  } else if (usedMode === "unused") {
-    filtered = filtered.filter(it => !it.used);
-  }
+      if (usedMode === "used") filtered = filtered.filter(it => !!it.used);
+      if (usedMode === "unused") filtered = filtered.filter(it => !it.used);
 
-  if (q) {
-    filtered = filtered.filter(it =>
-      String(it.email || "").toLowerCase().includes(q) ||
-      String(it.username || "").toLowerCase().includes(q)
-    );
-  }
+      if (q) {
+        filtered = filtered.filter(it =>
+          String(it.email || "").toLowerCase().includes(q) ||
+          String(it.username || "").toLowerCase().includes(q)
+        );
+      }
+
       renderAllEmails(filtered);
     }
 
@@ -745,45 +773,39 @@
 
         // used checkbox
         const label = document.createElement("label");
-        label.style.display = "inline-flex";
-        label.style.alignItems = "center";
-        label.style.gap = "6px";
-        label.style.fontSize = "12px";
-        label.style.color = "#444";
+        label.className = "usedLabel";
 
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.checked = !!it.used;
 
         cb.addEventListener("change", async () => {
-  const newVal = cb.checked;
-  cb.disabled = true;
-  try {
-    const res = await fetch("/api/admin?action=email-used", {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: it.username, email: it.email, used: newVal })
-    });
+          const newVal = cb.checked;
+          cb.disabled = true;
+          try {
+            const res = await fetch("/api/admin?action=email-used", {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: it.username, email: it.email, used: newVal })
+            });
 
-    if (!res.ok) {
-      cb.checked = !newVal;
-      alert(await res.text());
-      return;
-    }
+            if (!res.ok) {
+              cb.checked = !newVal;
+              alert(await res.text());
+              return;
+            }
 
-    // ✅ Cache/Objekt updaten (wichtig!)
-    it.used = newVal;
-    const idx = allEmailsCache.findIndex(e => e.username === it.username && e.email === it.email);
-    if (idx !== -1) allEmailsCache[idx].used = newVal;
+            // ✅ Cache/Objekt updaten + neu filtern (wichtig für "nur benutzt / nur unbenutzt")
+            it.used = newVal;
+            const idx = allEmailsCache.findIndex(e => e.username === it.username && e.email === it.email);
+            if (idx !== -1) allEmailsCache[idx].used = newVal;
 
-    // ✅ Liste neu filtern/anzeigen (damit "nur benutzt/nur unbenutzt" sofort stimmt)
-    applyAllFilters();
-
-  } finally {
-    cb.disabled = false;
-  }
-});
+            applyAllFilters();
+          } finally {
+            cb.disabled = false;
+          }
+        });
 
         label.appendChild(cb);
         label.appendChild(document.createTextNode("benutzt"));
@@ -791,11 +813,7 @@
         // delete button
         const del = document.createElement("button");
         del.textContent = "Löschen";
-        del.className = "btn";
-        del.style.background = "#e53935";
-        del.style.padding = "8px 10px";
-        del.style.borderRadius = "10px";
-        del.style.fontSize = "12px";
+        del.className = "btnSmall";
 
         del.addEventListener("click", async () => {
           const ok = confirm(`Email löschen?\n\n${it.email}\nUser: ${it.username}`);
@@ -844,7 +862,6 @@
       setStatus(statusAll, "Lade alle Emails…");
 
       try {
-        // Cachebuster, falls irgendwo gecached wird
         const res = await fetch("/api/admin?action=all-emails&limit=5000&t=" + Date.now(), { credentials: "include" });
         const text = await res.text();
 
@@ -853,6 +870,8 @@
           allEmailsCache = [];
           domainSelect.innerHTML = `<option value="">Domain: alle</option>`;
           domainSelect.disabled = true;
+          usedSelect.value = "";
+          usedSelect.disabled = true;
           renderAllEmails([]);
           return;
         }
@@ -988,6 +1007,11 @@
       applyAllFilters();
     });
 
+    usedSelect.addEventListener("change", () => {
+      if (!allEmailsCache.length) return;
+      applyAllFilters();
+    });
+
     loadBtn.addEventListener("click", () => loadEmailsForUser(userSelect.value));
     clearBtn.addEventListener("click", () => clearEmails(userSelect.value));
     renameBtn.addEventListener("click", () => renameUser(userSelect.value));
@@ -1010,10 +1034,6 @@
       await fetch("/api/logout", { credentials: "include" });
       location.href = "index.html?loggedout=1";
     });
-    usedSelect.addEventListener("change", () => {
-  if (!allEmailsCache.length) return;
-  applyAllFilters();
-});
 
     (async () => {
       const me = await requireAdmin();
