@@ -23,10 +23,47 @@ async function getUsernameFromToken(req) {
   }
 }
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
 function isValidEmail(s) {
-  if (typeof s !== "string") return false;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(s.trim());
+  return emailRegex.test(s);
+}
+
+function toEntry(item) {
+  // 1) Objekt
+  if (item && typeof item === "object") {
+    const email = normalizeEmail(item.email);
+    if (typeof item.email === "string" && isValidEmail(email)) {
+      const ts = (typeof item.ts === "number") ? item.ts : null;
+      return { email, ts };
+    }
+    return null;
+  }
+
+  // 2) String
+  if (typeof item === "string") {
+    // JSON-String?
+    try {
+      const parsed = JSON.parse(item);
+      if (parsed && typeof parsed.email === "string") {
+        const email = normalizeEmail(parsed.email);
+        if (!isValidEmail(email)) return null;
+        const ts = (typeof parsed.ts === "number") ? parsed.ts : null;
+        return { email, ts };
+      }
+    } catch {
+      // kein JSON
+    }
+
+    // Plain email string (altes Format)
+    const email = normalizeEmail(item);
+    if (isValidEmail(email)) return { email, ts: null };
+  }
+
+  return null;
 }
 
 export default async function handler(req, res) {
@@ -37,54 +74,20 @@ export default async function handler(req, res) {
     if (!username) return res.status(401).send("Nicht eingeloggt.");
 
     const key = `emails:${username}`;
-
-    // hol dir z.B. die letzten 200
-    const raw = await kv.lrange(key, 0, 199);
+    const raw = await kv.lrange(key, 0, 199); // letzte 200
 
     const emails = [];
-
     for (const item of raw || []) {
-      // 1) Falls KV schon Objekte zurückgibt
-      if (item && typeof item === "object") {
-        if (typeof item.email === "string" && isValidEmail(item.email)) {
-          emails.push({ email: item.email.trim(), ts: item.ts ?? null });
-        }
-        continue;
-      }
-
-      // 2) Falls KV Strings zurückgibt
-      if (typeof item === "string") {
-        // 2a) JSON-String?
-        try {
-          const parsed = JSON.parse(item);
-          if (parsed && typeof parsed.email === "string" && isValidEmail(parsed.email)) {
-            emails.push({ email: parsed.email.trim(), ts: parsed.ts ?? null });
-            continue;
-          }
-        } catch {
-          // ignore -> vielleicht Plain-String
-        }
-
-        // 2b) Plain Email-String (altes Format)
-        if (isValidEmail(item)) {
-          emails.push({ email: item.trim(), ts: null });
-        }
-      }
+      const entry = toEntry(item);
+      if (entry) emails.push(entry);
     }
 
-    return res.status(200).json({
-      ok: true,
-      emails,
-      debug: {
-        username,
-        key,
-        rawCount: (raw || []).length,
-        parsedCount: emails.length,
-        sampleTypes: (raw || []).slice(0, 5).map(v => (v === null ? "null" : typeof v))
-      }
-    });
+    // ✅ Neueste oben: sortiere nach ts desc (null bleibt hinten, relative Reihenfolge egal)
+    emails.sort((a, b) => (b.ts ?? -1) - (a.ts ?? -1));
+
+    return res.status(200).json({ ok: true, emails });
   } catch (err) {
     console.error("EMAILS ERROR:", err);
-    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
+    return res.status(500).send("Serverfehler");
   }
 }

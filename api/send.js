@@ -24,16 +24,40 @@ async function getUsername(req) {
 }
 
 async function readJsonBody(req) {
-  // Wenn es doch über Next.js API Route läuft, ist req.body oft schon da:
   if (req.body && typeof req.body === "object") return req.body;
 
-  // In Vercel Functions (ohne Next) müssen wir den Stream lesen:
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
   const raw = Buffer.concat(chunks).toString("utf8").trim();
   if (!raw) return null;
 
   try { return JSON.parse(raw); } catch { return null; }
+}
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function isValidEmail(s) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(s);
+}
+
+function extractEmail(item) {
+  // akzeptiere alte + neue Formate
+  if (item && typeof item === "object" && typeof item.email === "string") {
+    return normalizeEmail(item.email);
+  }
+  if (typeof item === "string") {
+    // JSON-String?
+    try {
+      const parsed = JSON.parse(item);
+      if (parsed && typeof parsed.email === "string") return normalizeEmail(parsed.email);
+    } catch {}
+    // Plain-String
+    return normalizeEmail(item);
+  }
+  return "";
 }
 
 export default async function handler(req, res) {
@@ -48,24 +72,27 @@ export default async function handler(req, res) {
       return res.status(400).send("Email fehlt");
     }
 
-    const email = body.email.trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).send("Ungültige Email");
-    }
+    const emailNorm = normalizeEmail(body.email);
+    if (!emailNorm) return res.status(400).send("Email fehlt");
+    if (!isValidEmail(emailNorm)) return res.status(400).send("Ungültige Email");
 
     const key = `emails:${username}`;
-    await kv.lpush(key, JSON.stringify({ email, ts: Date.now() }));
 
-    // ✅ Debug: Länge nach dem Speichern
-    const len = await kv.llen(key);
+    // ✅ Duplikat-Check (prüfe z.B. die letzten 500 Einträge)
+    const raw = await kv.lrange(key, 0, 499);
 
-    return res.status(200).json({
-      ok: true,
-      debug: { username, key, len }
-    });
+    const exists = (raw || []).some(item => extractEmail(item) === emailNorm);
+    if (exists) {
+      // 409 Conflict → Frontend zeigt Text an
+      return res.status(409).send("Diese Email wurde bereits gespeichert.");
+    }
+
+    // ✅ Speichern (neueste oben durch LPUSH)
+    await kv.lpush(key, JSON.stringify({ email: emailNorm, ts: Date.now() }));
+
+    return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("SEND ERROR:", err);
-    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
+    return res.status(500).send("Serverfehler");
   }
 }
