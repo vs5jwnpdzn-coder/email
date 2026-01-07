@@ -740,18 +740,27 @@
         cb.checked = !!it.used;
 
         cb.addEventListener("change", async () => {
+          const newVal = cb.checked;
           cb.disabled = true;
           try {
             const res = await fetch("/api/admin?action=email-used", {
               method: "PATCH",
               credentials: "include",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username: it.username, email: it.email, used: cb.checked })
+              body: JSON.stringify({ username: it.username, email: it.email, used: newVal })
             });
+
             if (!res.ok) {
-              cb.checked = !cb.checked;
+              cb.checked = !newVal;
               alert(await res.text());
+              return;
             }
+
+            // ✅ WICHTIG: Frontend-Daten updaten, damit Re-Render nicht zurücksetzt
+            it.used = newVal;
+            const idx = allEmailsCache.findIndex(e => e.username === it.username && e.email === it.email);
+            if (idx !== -1) allEmailsCache[idx].used = newVal;
+
           } finally {
             cb.disabled = false;
           }
@@ -783,7 +792,6 @@
             });
 
             if (res.ok) {
-              // auch Cache updaten, damit Filter danach stimmt
               allEmailsCache = allEmailsCache.filter(e => !(e.username === it.username && e.email === it.email));
               applyAllFilters();
               setStatus(statusAll, "Email gelöscht ✅", true);
@@ -817,7 +825,8 @@
       setStatus(statusAll, "Lade alle Emails…");
 
       try {
-        const res = await fetch("/api/admin?action=all-emails&limit=5000", { credentials: "include" });
+        // Cachebuster, falls irgendwo gecached wird
+        const res = await fetch("/api/admin?action=all-emails&limit=5000&t=" + Date.now(), { credentials: "include" });
         const text = await res.text();
 
         if (!res.ok) {
@@ -923,7 +932,6 @@
         tabAll.classList.add("active");
         allPanel.classList.remove("hide");
         clearList("Alle Emails");
-        // direkt die gefilterte Liste zeigen (falls schon geladen)
         if (allEmailsCache.length) applyAllFilters();
       } else {
         tabNotify.classList.add("active");
@@ -989,11 +997,9 @@
       if (!me) return;
 
       clearList("Alle Emails");
-
       await loadUsers();
       updatePreview();
 
-      // Start direkt in "Alle Emails" + automatisch laden
       activate("all");
       await loadAllEmails();
 

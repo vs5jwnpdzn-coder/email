@@ -166,7 +166,7 @@ export default async function handler(req, res) {
       }
 
       await kv.srem(setKey, email);
-      await kv.del(usedKey(username, email)); // ✅ used-flag mit löschen
+      await kv.del(usedKey(username, email)); // used-flag löschen
 
       return res.status(200).json({ ok: true, removed });
     }
@@ -202,7 +202,7 @@ export default async function handler(req, res) {
     }
 
     // --------------------
-    // ✅ PATCH email-used
+    // PATCH email-used
     // Body: { username, email, used: true/false }
     // --------------------
     if (req.method === "PATCH" && action === "email-used") {
@@ -244,7 +244,7 @@ export default async function handler(req, res) {
           const parsed = parseEmailItem(item);
           if (!parsed) continue;
 
-          // ✅ used laden
+          // used laden
           const used = await kv.get(usedKey(username, parsed.email)).catch(() => null);
 
           all.push({
