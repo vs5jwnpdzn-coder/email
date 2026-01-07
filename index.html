@@ -5,12 +5,14 @@
   <title>Anmelden</title>
 
   <style>
-    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
 
     body {
       height: 100vh;
       margin: 0;
-      /* ✅ GLEICHER Hintergrund wie Registrieren */
       background: linear-gradient(135deg, #43cea2, #185a9d);
       display: flex;
       justify-content: center;
@@ -26,7 +28,9 @@
       text-align: center;
     }
 
-    h1 { margin-bottom: 20px; }
+    h1 {
+      margin-bottom: 20px;
+    }
 
     input {
       width: 100%;
@@ -69,24 +73,17 @@
 </head>
 
 <body>
-  <script>
-  fetch("session_check.php")
-    .then(res => res.text())
-    .then(isLoggedIn => {
-      if (isLoggedIn === "1") {
-        window.location.href = "dashboard.php";
-      }
-    });
-</script>
 
   <div class="container">
     <h1>Anmelden</h1>
 
     <div id="errorBox" class="error"></div>
 
-    <form action="login.php" method="POST">
+    <!-- ❗ KEIN action-Attribut -->
+    <form id="loginForm" novalidate>
       <input type="text" name="username" placeholder="Benutzername" required>
       <input type="password" name="password" placeholder="Passwort" required>
+
       <button type="submit">Anmelden</button>
     </form>
 
@@ -97,17 +94,35 @@
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get("error");
-    const box = document.getElementById("errorBox");
+    const form = document.getElementById("loginForm");
+    const errorBox = document.getElementById("errorBox");
 
-    if (error === "1") {
-      box.textContent = "Benutzername oder Passwort ist falsch.";
-      box.style.display = "block";
-    } else if (error === "2") {
-      box.textContent = "Server- oder Datenbankfehler. Bitte später erneut versuchen.";
-      box.style.display = "block";
-    }
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault(); // ⛔ verhindert Navigation & Downloads
+      errorBox.style.display = "none";
+
+      const data = Object.fromEntries(new FormData(form));
+
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+          // ✅ Login erfolgreich → Dashboard
+          window.location.href = "dashboard.html";
+        } else {
+          const msg = await res.text();
+          errorBox.textContent = msg || "Benutzername oder Passwort falsch.";
+          errorBox.style.display = "block";
+        }
+      } catch (err) {
+        errorBox.textContent = "Server nicht erreichbar.";
+        errorBox.style.display = "block";
+      }
+    });
   </script>
 
 </body>

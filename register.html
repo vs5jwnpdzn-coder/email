@@ -5,88 +5,133 @@
   <title>Registrieren</title>
 
   <style>
-    * { box-sizing: border-box; font-family: Arial, sans-serif; }
-    body {
-      height: 100vh; margin: 0;
-      background: linear-gradient(135deg, #43cea2, #185a9d);
-      display: flex; justify-content: center; align-items: center;
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
     }
+
+    body {
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #43cea2, #185a9d);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     .container {
-      background: white; padding: 30px; width: 340px;
-      border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      background: white;
+      padding: 30px;
+      width: 340px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
       text-align: center;
     }
-    h1 { margin-bottom: 20px; }
-    input { width: 100%; padding: 10px; margin: 8px 0; font-size: 14px; }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
     button {
-      width: 100%; padding: 10px; margin-top: 15px;
-      border: none; cursor: pointer; color: white;
-      font-size: 15px; border-radius: 5px; background-color: #2196F3;
+      width: 100%;
+      padding: 10px;
+      margin-top: 15px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      font-size: 15px;
+      border-radius: 5px;
+      background-color: #2196F3;
     }
-    .error{
-      background:#ffd6d6; border:1px solid #ff9b9b;
-      padding:10px; margin-bottom:15px; font-size:14px; display:none;
+
+    .error {
+      background: #ffd6d6;
+      border: 1px solid #ff9b9b;
+      padding: 10px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      display: none;
     }
-    .link { margin-top: 15px; font-size: 14px; }
-    .link a { color: #2196F3; text-decoration: none; }
+
+    .link {
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .link a {
+      color: #2196F3;
+      text-decoration: none;
+    }
   </style>
 </head>
 
 <body>
-    <script>
-  fetch("session_check.php")
-    .then(res => res.text())
-    .then(isLoggedIn => {
-      if (isLoggedIn === "1") {
-        window.location.href = "dashboard.php";
-      }
-    });
-</script>
+
   <div class="container">
     <h1>Registrieren</h1>
 
     <div id="errorBox" class="error"></div>
 
-    <form action="register.php" method="POST" onsubmit="return checkPasswords()">
+    <!-- ❗ KEIN action-Attribut -->
+    <form id="registerForm" novalidate>
       <input type="text" name="username" placeholder="Benutzername" required>
-      <input type="password" id="pw" name="password" placeholder="Passwort" required>
-      <input type="password" id="pw2" name="confirm_password" placeholder="Passwort wiederholen" required>
+      <input type="password" name="password" placeholder="Passwort" required>
+      <input type="password" name="confirm" placeholder="Passwort wiederholen" required>
+
+      <!-- type=submit ist OK, wir verhindern Default per JS -->
       <button type="submit">Registrieren</button>
     </form>
 
     <div class="link">
-      Schon einen Account? <a href="index.html">Jetzt anmelden</a>
+      Schon einen Account?
+      <a href="index.html">Jetzt anmelden</a>
     </div>
   </div>
 
   <script>
-    function checkPasswords() {
-      const pw = document.getElementById("pw").value;
-      const pw2 = document.getElementById("pw2").value;
-      if (pw !== pw2) {
-        alert("Passwörter stimmen nicht überein!");
-        return false;
+    const form = document.getElementById("registerForm");
+    const errorBox = document.getElementById("errorBox");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault(); // ⛔ verhindert Navigation & Downloads
+      errorBox.style.display = "none";
+
+      const data = Object.fromEntries(new FormData(form));
+
+      if (data.password !== data.confirm) {
+        errorBox.textContent = "Passwörter stimmen nicht überein.";
+        errorBox.style.display = "block";
+        return;
       }
-      return true;
-    }
 
-    const params = new URLSearchParams(window.location.search);
-    const error = params.get("error");
-    const box = document.getElementById("errorBox");
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
 
-    if (error === "1") {
-      box.textContent = "Benutzername ist bereits vergeben.";
-      box.style.display = "block";
-    } else if (error === "2") {
-      box.textContent = "Bitte alle Felder ausfüllen.";
-      box.style.display = "block";
-    } else if (error === "3") {
-      box.textContent = "Server- oder Datenbankfehler. Bitte später erneut versuchen.";
-      box.style.display = "block";
-    } else if (error === "4") {
-      box.textContent = "Passwörter stimmen nicht überein.";
-      box.style.display = "block";
-    }
+        if (res.ok) {
+          // ✅ Erfolgreich registriert → Dashboard
+          window.location.href = "dashboard.html";
+        } else {
+          const msg = await res.text();
+          errorBox.textContent = msg || "Registrierung fehlgeschlagen.";
+          errorBox.style.display = "block";
+        }
+      } catch (err) {
+        errorBox.textContent = "Server nicht erreichbar.";
+        errorBox.style.display = "block";
+      }
+    });
   </script>
+
 </body>
 </html>

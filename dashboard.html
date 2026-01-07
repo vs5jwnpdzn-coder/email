@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      margin: 0;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .card {
+      width: 420px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+      padding: 24px;
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #222;
+    }
+
+    .btn {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      background: #e53935;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .info {
+      margin-top: 14px;
+      padding: 12px;
+      background: #f7f7f7;
+      border-radius: 10px;
+      color: #444;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <div class="top">
+      <h1>Dashboard</h1>
+      <button class="btn" id="logoutBtn">Logout</button>
+    </div>
+
+    <p id="hello">Lade…</p>
+
+    <div class="info">
+      <div><strong>Status:</strong> Eingeloggt</div>
+    </div>
+  </div>
+
+  <script>
+    async function checkLogin() {
+      try {
+        const res = await fetch("/api/me");
+        if (!res.ok) {
+          // ❌ Nicht eingeloggt → zurück zum Login
+          window.location.href = "index.html";
+          return;
+        }
+
+        const data = await res.json();
+        document.getElementById("hello").textContent =
+          "Hallo, " + data.username + " 🎉";
+
+      } catch (err) {
+        // ❌ Serverproblem → zurück zum Login
+        window.location.href = "index.html";
+      }
+    }
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await fetch("/api/logout");
+      window.location.href = "index.html";
+    });
+
+    // Beim Laden prüfen
+    checkLogin();
+  </script>
+
+</body>
+</html>
