@@ -3,30 +3,124 @@
 <head>
   <meta charset="UTF-8">
   <title>Meine Emails</title>
+
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
-    body { min-height: 100vh; margin: 0; background: #f4f4f4; padding: 80px 20px 20px; }
-    .top-left{position:fixed;top:16px;left:16px;font-size:14px;color:#333;background:rgba(255,255,255,0.95);padding:8px 12px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:10;}
-    .top-right{position:fixed;top:16px;right:16px;display:flex;gap:10px;z-index:10;}
-    .username{font-weight:bold;}
-    .btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-size:14px;color:white;}
-    .btn-back{background:#2196F3;}
-    .btn-logout{background:#e53935;}
-    .btn:hover{opacity:0.9;}
-    .card{width:700px;max-width:95vw;background:white;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.15);padding:22px;margin:0 auto;}
-    h1{margin:0 0 10px 0;font-size:22px;color:#222;}
-    .hint{margin:0 0 18px 0;color:#666;font-size:14px;}
-    .status{padding:12px;background:#fafafa;border:1px solid #eee;border-radius:10px;color:#111;font-size:14px;margin-bottom:12px;word-break:break-word;white-space:pre-wrap;}
-    ul{list-style:none;padding:0;margin:0;}
-    li{padding:12px;border:1px solid #eee;border-radius:10px;margin-bottom:10px;background:#fafafa;word-break:break-word;display:flex;justify-content:space-between;gap:10px;align-items:center;}
-    .email{color:#222;}
-    .time{color:#666;font-size:12px;white-space:nowrap;}
-    .badge{position:fixed;bottom:12px;left:12px;background:#111;color:#fff;padding:6px 10px;border-radius:10px;font-size:12px;z-index:9999;opacity:0.92;}
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: #f4f4f4;
+      padding: 80px 20px 20px;
+    }
+
+    .top-left {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      font-size: 14px;
+      color: #333;
+      background: rgba(255,255,255,0.95);
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .top-right {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .username { font-weight: bold; }
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+    }
+
+    .btn-back { background: #2196F3; }
+    .btn-logout { background: #e53935; }
+    .btn:hover { opacity: 0.9; }
+
+    .card {
+      width: 700px;
+      max-width: 95vw;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      padding: 22px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #222;
+    }
+
+    .count {
+      font-size: 13px;
+      color: #444;
+      background: #f1f1f1;
+      border: 1px solid #e8e8e8;
+      padding: 6px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .hint {
+      margin: 0 0 18px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .empty {
+      padding: 12px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      color: #444;
+      font-size: 14px;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
+
+    li {
+      padding: 12px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: #fafafa;
+      word-break: break-word;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .email { color: #222; }
+    .time { color: #666; font-size: 12px; white-space: nowrap; }
   </style>
 </head>
-<body>
-  <div class="badge">myemails.html ✅ (Debug aktiv)</div>
 
+<body>
   <div class="top-left">
     Angemeldet als:
     <span class="username" id="userName">Lade…</span>
@@ -38,72 +132,70 @@
   </div>
 
   <div class="card">
-    <h1>Meine Emails</h1>
+    <div class="header">
+      <h1>Meine Emails</h1>
+      <div class="count" id="countPill">Emails: …</div>
+    </div>
+
     <p class="hint">Hier siehst du alle gespeicherten Emails deines Accounts.</p>
 
-    <div class="status" id="statusBox">Start…</div>
     <div id="listBox"></div>
   </div>
 
   <script>
-    const statusBox = document.getElementById("statusBox");
     const listBox = document.getElementById("listBox");
+    const countPill = document.getElementById("countPill");
 
     function formatTime(ts) {
       if (!ts) return "";
       try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
     }
 
-    async function load() {
-      statusBox.textContent = "1) Seite geladen ✅\n2) Prüfe /api/me …";
-
+    async function requireLogin() {
       const meRes = await fetch("/api/me", { credentials: "include" });
-      const meText = await meRes.text();
-      statusBox.textContent += "\n/api/me Status: " + meRes.status + "\n/api/me Body: " + meText;
-
       if (!meRes.ok) {
-        statusBox.textContent += "\n\nNicht eingeloggt → Weiterleitung zu index.html …";
-        setTimeout(() => location.href = "index.html", 1200);
-        return;
+        location.href = "index.html";
+        return null;
       }
-
-      let me;
-      try { me = JSON.parse(meText); } catch {
-        statusBox.textContent += "\n\nERROR: /api/me ist kein JSON.";
-        return;
-      }
-
+      const me = await meRes.json();
       document.getElementById("userName").textContent = me.username;
+      return me;
+    }
 
-      statusBox.textContent += "\n\n3) Lade /api/emails …";
+    async function loadEmails() {
+      // 1) login check
+      const me = await requireLogin();
+      if (!me) return;
+
+      // 2) load emails
       const res = await fetch("/api/emails", { credentials: "include" });
-      const text = await res.text();
-      statusBox.textContent += "\n/api/emails Status: " + res.status + "\n/api/emails Body: " + text;
-
-      if (!res.ok) return;
-
-      let data;
-      try { data = JSON.parse(text); } catch {
-        statusBox.textContent += "\n\nERROR: /api/emails ist kein JSON.";
+      if (!res.ok) {
+        // Wenn z.B. ausgeloggt:
+        if (res.status === 401) location.href = "index.html";
+        listBox.innerHTML = `<div class="empty">Emails konnten nicht geladen werden.</div>`;
+        countPill.textContent = "Emails: 0";
         return;
       }
 
+      const data = await res.json();
       const emails = data.emails || [];
+
+      // Counter oben
+      countPill.textContent = "Emails: " + emails.length;
+
       if (emails.length === 0) {
-        statusBox.textContent += "\n\nErgebnis: 0 Emails gespeichert.";
-        listBox.innerHTML = "";
+        listBox.innerHTML = `<div class="empty">Noch keine Emails gespeichert.</div>`;
         return;
       }
-
-      statusBox.textContent += "\n\nErgebnis: " + emails.length + " Emails gefunden ✅";
 
       const ul = document.createElement("ul");
+
       for (const item of emails) {
         const li = document.createElement("li");
 
         const emailSpan = document.createElement("span");
         emailSpan.className = "email";
-        emailSpan.textContent = (typeof item.email === "string") ? item.email : String(item.email);
+        emailSpan.textContent = item.email;
 
         const timeSpan = document.createElement("span");
         timeSpan.className = "time";
@@ -127,8 +219,9 @@
       finally { location.href = "index.html?loggedout=1"; }
     });
 
-    load().catch(e => {
-      statusBox.textContent = "JS Fehler: " + (e?.message || e);
+    loadEmails().catch(() => {
+      listBox.innerHTML = `<div class="empty">Fehler beim Laden.</div>`;
+      countPill.textContent = "Emails: 0";
     });
   </script>
 </body>
