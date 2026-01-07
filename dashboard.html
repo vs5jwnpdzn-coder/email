@@ -170,6 +170,7 @@
 
       <div style="display:flex; gap:10px;">
         <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
+        <button class="btn btn-mails" id="inboxBtn">Posteingang</button>
         <button class="btn btn-logout" id="logoutBtn">Logout</button>
       </div>
     </div>
@@ -315,6 +316,9 @@
       await fetch("/api/logout", { credentials: "include" });
       location.href = "index.html?loggedout=1";
     });
+    document.getElementById("inboxBtn").addEventListener("click", () => {
+  location.href = "inbox.html";
+});
 
     (async () => {
       const me = await checkLogin();

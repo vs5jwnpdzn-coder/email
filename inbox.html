@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Posteingang</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: #f4f4f4;
+      padding: 80px 20px 20px;
+    }
+
+    .top-left {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      font-size: 14px;
+      color: #333;
+      background: rgba(255,255,255,0.95);
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .top-right {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .username { font-weight: bold; }
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+      background: #2196F3;
+    }
+    .btn:hover { opacity: 0.9; }
+
+    .card {
+      width: 820px;
+      max-width: 95vw;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      padding: 22px;
+      margin: 0 auto;
+    }
+
+    h1 { margin: 0 0 10px 0; font-size: 22px; color: #222; }
+    .hint { margin: 0 0 18px 0; color: #666; font-size: 14px; line-height: 1.45; }
+
+    .count {
+      display: inline-block;
+      background: #111;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-bottom: 12px;
+      opacity: 0.92;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
+
+    li {
+      padding: 12px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: #fafafa;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      word-break: break-word;
+    }
+
+    .text { color: #222; }
+    .time { color: #666; font-size: 12px; white-space: nowrap; }
+
+    .empty {
+      padding: 12px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      background: #fafafa;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .status {
+      margin-top: 10px;
+      font-size: 13px;
+      min-height: 18px;
+      color: #b71c1c;
+      word-break: break-word;
+    }
+    .status.ok { color: #1b5e20; }
+  </style>
+</head>
+
+<body>
+  <div class="top-left">
+    Angemeldet als:
+    <span class="username" id="userName">Lade…</span>
+  </div>
+
+  <div class="top-right">
+    <button class="btn" id="backBtn">Zurück</button>
+  </div>
+
+  <div class="card">
+    <h1>Posteingang</h1>
+    <p class="hint">
+      Hier wirst du benachrichtigt, wenn eine deiner Emails Geld eingebracht hat
+      und auch wie viel du bekommst.
+    </p>
+
+    <div class="count" id="countPill">Nachrichten: …</div>
+    <div id="listBox"></div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const listBox = document.getElementById("listBox");
+    const countPill = document.getElementById("countPill");
+    const statusEl = document.getElementById("status");
+
+    function setStatus(text, ok=false) {
+      statusEl.className = "status" + (ok ? " ok" : "");
+      statusEl.textContent = text || "";
+    }
+
+    function formatTime(ts) {
+      if (!ts) return "";
+      try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
+    }
+
+    async function checkLogin() {
+      const res = await fetch("/api/me", { credentials: "include" });
+      if (!res.ok) { location.href = "index.html"; return null; }
+      const me = await res.json();
+      document.getElementById("userName").textContent = me.username;
+      return me;
+    }
+
+    async function loadInbox() {
+      setStatus("Lade…");
+      const res = await fetch("/api/inbox", { credentials: "include" });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        listBox.innerHTML = `<div class="empty">Posteingang konnte nicht geladen werden.</div>`;
+        countPill.textContent = "Nachrichten: 0";
+        setStatus(t || "Fehler.", false);
+        return;
+      }
+
+      const data = await res.json().catch(() => ({ messages: [] }));
+      const messages = data.messages || [];
+
+      countPill.textContent = "Nachrichten: " + messages.length;
+
+      if (messages.length === 0) {
+        listBox.innerHTML = `<div class="empty">Noch keine Nachrichten.</div>`;
+        setStatus("OK", true);
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      for (const m of messages) {
+        const li = document.createElement("li");
+
+        const text = document.createElement("span");
+        text.className = "text";
+        text.textContent = m.text || "";
+
+        const time = document.createElement("span");
+        time.className = "time";
+        time.textContent = formatTime(m.ts);
+
+        li.appendChild(text);
+        li.appendChild(time);
+        ul.appendChild(li);
+      }
+
+      listBox.innerHTML = "";
+      listBox.appendChild(ul);
+      setStatus("OK", true);
+    }
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      location.href = "dashboard.html";
+    });
+
+    (async () => {
+      const me = await checkLogin();
+      if (!me) return;
+      await loadInbox();
+    })().catch(e => setStatus("JS Fehler: " + (e?.message || e), false));
+  </script>
+</body>
+</html>
