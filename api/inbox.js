@@ -16,10 +16,15 @@ async function getUsername(req) {
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const { payload } = await jwtVerify(token, secret);
-  return String(payload.username);
+
+  // ✅ wichtig: immer lower-case, damit keys matchen
+  return String(payload.username || "").trim().toLowerCase();
 }
 
 export default async function handler(req, res) {
+  // ✅ Cache aus, damit du sofort neue Nachrichten siehst
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+
   if (req.method !== "GET") return res.status(405).send("Method not allowed");
 
   try {
@@ -41,6 +46,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, messages });
   } catch (err) {
     console.error("INBOX ERROR:", err);
-    return res.status(500).send("Serverfehler");
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }

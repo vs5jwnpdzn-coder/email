@@ -89,6 +89,9 @@ function parseEmailItem(item) {
 }
 
 export default async function handler(req, res) {
+  // ✅ WICHTIG: nie cachen (sonst “kommt nix an”, obwohl KV schon geschrieben hat)
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+
   const admin = await requireAdmin(req);
   if (!admin) return res.status(403).send("Forbidden");
 
@@ -124,9 +127,7 @@ export default async function handler(req, res) {
         if (parsed) emails.push(parsed);
       }
 
-      // lpush = neueste schon oben; falls ts fehlt -> bleibt hinten nicht perfekt, aber ok
       emails.sort((a, b) => (b.ts ?? -1) - (a.ts ?? -1));
-
       return res.status(200).json({ ok: true, emails });
     }
 
@@ -147,20 +148,16 @@ export default async function handler(req, res) {
 
       const raw = await kv.lrange(listKey, 0, -1);
 
-      // entferne alle Einträge, die diese email enthalten (egal ob JSON/plain)
       let removed = 0;
       for (const item of raw || []) {
         const parsed = parseEmailItem(item);
         if (parsed && parsed.email === email) {
-          // LREM count=0 entfernt alle Matches dieses Werts
           await kv.lrem(listKey, 0, item);
           removed++;
         }
       }
 
-      // Set aufräumen
       await kv.srem(setKey, email);
-
       return res.status(200).json({ ok: true, removed });
     }
 
@@ -192,7 +189,9 @@ export default async function handler(req, res) {
       const limit = Math.max(1, Math.min(5000, parseInt(url.searchParams.get("limit") || "1000", 10)));
 
       const users = await kv.smembers("users");
-      const usernames = (users || []).filter(u => typeof u === "string" && u.trim()).map(u => u.trim().toLowerCase());
+      const usernames = (users || [])
+        .filter(u => typeof u === "string" && u.trim())
+        .map(u => u.trim().toLowerCase());
 
       const all = [];
       for (const username of usernames) {
@@ -214,6 +213,29 @@ export default async function handler(req, res) {
     }
 
     // --------------------
+    // ✅ GET inbox of a user (ADMIN DEBUG)
+    // /api/admin?action=inbox&username=bonez
+    // --------------------
+    if (req.method === "GET" && action === "inbox") {
+      const username = normalizeUsername(url.searchParams.get("username"));
+      if (!username) return res.status(400).send("username fehlt");
+
+      const key = `inbox:${username}`;
+      const raw = await kv.lrange(key, 0, 200);
+
+      const messages = [];
+      for (const item of raw || []) {
+        if (typeof item !== "string") continue;
+        try {
+          const parsed = JSON.parse(item);
+          if (parsed && typeof parsed.text === "string") messages.push(parsed);
+        } catch {}
+      }
+
+      return res.status(200).json({ ok: true, username, key, count: messages.length, messages });
+    }
+
+    // --------------------
     // POST notify (payout msg) -> inbox:<username>
     // Body: { username, euro }
     // --------------------
@@ -231,9 +253,14 @@ export default async function handler(req, res) {
       const text = `Du bekommst für eine deiner Emails ${euro} Euro. Herzlichen Glückwunsch.`;
 
       const msg = { type: "payout", euro, text, ts: Date.now(), from: "admin" };
-      await kv.lpush(`inbox:${username}`, JSON.stringify(msg));
+      const key = `inbox:${username}`;
 
-      return res.status(200).json({ ok: true });
+      await kv.lpush(key, JSON.stringify(msg));
+
+      // ✅ Debug: sofort prüfen ob es wirklich drin liegt
+      const len = await kv.llen(key).catch(() => null);
+
+      return res.status(200).json({ ok: true, debug: { username, key, inboxLen: len } });
     }
 
     // --------------------
@@ -333,6 +360,6 @@ export default async function handler(req, res) {
     return res.status(400).send("Unknown action");
   } catch (err) {
     console.error("ADMIN ERROR:", err);
-    return res.status(500).send("Serverfehler");
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }
