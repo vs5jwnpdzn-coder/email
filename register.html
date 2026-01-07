@@ -16,10 +16,15 @@
         radial-gradient(1200px 600px at 80% 0%, rgba(24,90,157,0.35), transparent 55%),
         linear-gradient(135deg, #0b1220, #0f1c33);
       color: #fff;
+
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 26px 18px;
+
+      /* ✅ mobile safe (Notch etc.) */
+      padding: 24px 16px;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
     }
 
     .wrap { width: 100%; max-width: 460px; }
@@ -30,7 +35,7 @@
       border-radius: 22px;
       border: 1px solid rgba(255,255,255,0.12);
       box-shadow: 0 24px 70px rgba(0,0,0,0.55);
-      padding: 34px 26px 26px;
+      padding: 32px 22px 24px;
       text-align: center;
       backdrop-filter: blur(10px);
     }
@@ -62,6 +67,7 @@
       line-height: 1.35;
       display: none;
       text-align: left;
+      word-break: break-word; /* ✅ */
     }
 
     .box.error {
@@ -75,7 +81,10 @@
     input {
       width: 100%;
       padding: 14px 14px;
-      font-size: 14px;
+
+      /* ✅ iOS Safari: verhindert Auto-Zoom */
+      font-size: 16px;
+
       border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.18);
       outline: none;
@@ -96,6 +105,7 @@
       min-height: 16px;
       color: rgba(255,255,255,0.70);
       padding-left: 4px;
+      word-break: break-word; /* ✅ */
     }
     .hint.ok { color: rgba(157,255,176,0.98); }
     .hint.bad { color: rgba(255,155,155,0.98); }
@@ -112,6 +122,7 @@
       border-radius: 14px;
       background: linear-gradient(135deg, #43cea2, #1e88e5);
       transition: opacity 0.12s ease;
+      touch-action: manipulation;
     }
     button:hover { opacity: 0.92; }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -120,6 +131,7 @@
       margin-top: 14px;
       font-size: 14px;
       color: rgba(255,255,255,0.78);
+      line-height: 1.4;
     }
     .link a {
       color: rgba(180,220,255,1);
@@ -127,6 +139,13 @@
       font-weight: 800;
     }
     .link a:hover { text-decoration: underline; }
+
+    /* ✅ kleine Handys */
+    @media (max-width: 380px) {
+      .card { padding: 26px 18px 20px; border-radius: 18px; }
+      .title { font-size: 26px; }
+      .subtitle { font-size: 12px; }
+    }
   </style>
 </head>
 
@@ -221,7 +240,6 @@ async function checkUsernameAvailability(raw) {
     return;
   }
 
-  // lokale Regeln sofort
   if (!localValid(u)) {
     usernameOk = false;
     setHint("Ungültig: 3–20 Zeichen, nur a-z 0-9 _ -", "bad");
@@ -229,7 +247,6 @@ async function checkUsernameAvailability(raw) {
     return;
   }
 
-  // unnötige doppelte Checks vermeiden
   if (u === lastChecked) return;
 
   setHint("Prüfe Verfügbarkeit…", "");
@@ -238,7 +255,8 @@ async function checkUsernameAvailability(raw) {
 
   try {
     const res = await fetch("/api/check-username?username=" + encodeURIComponent(u), {
-      credentials: "include"
+      credentials: "include",
+      cache: "no-store"
     });
 
     const data = await res.json().catch(() => null);
@@ -267,7 +285,6 @@ async function checkUsernameAvailability(raw) {
   }
 }
 
-// Debounce: erst 350ms nach letztem Tippen prüfen
 usernameInput.addEventListener("input", () => {
   const u = normalizeUsername(usernameInput.value);
   usernameInput.value = u;
@@ -314,7 +331,6 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-// initial disable state
 updateSubmit();
 </script>
 

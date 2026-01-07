@@ -16,6 +16,7 @@
         radial-gradient(1200px 600px at 80% 0%, rgba(30,136,229,0.22), transparent 55%),
         linear-gradient(135deg, #f7f9fc, #eef3fb);
       color: #111;
+      overflow-x: hidden;
     }
 
     .topbar {
@@ -25,12 +26,13 @@
       backdrop-filter: blur(10px);
       background: rgba(255,255,255,0.8);
       border-bottom: 1px solid rgba(0,0,0,0.06);
+      padding-top: env(safe-area-inset-top);
     }
 
     .topbar-inner {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 14px 18px;
+      padding: 12px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -45,6 +47,7 @@
       font-size: 14px;
       color: #222;
       flex-wrap: wrap;
+      min-width: 0;
     }
 
     .pill {
@@ -54,6 +57,9 @@
       border: 1px solid rgba(0,0,0,0.06);
       font-size: 13px;
       white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .adminTag {
@@ -66,6 +72,13 @@
 
     .username { font-weight: 700; }
 
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     .btn {
       padding: 10px 14px;
       border-radius: 10px;
@@ -74,6 +87,8 @@
       font-size: 14px;
       color: white;
       transition: opacity 0.12s ease;
+      touch-action: manipulation;
+      white-space: nowrap;
     }
     .btn:hover { opacity: 0.9; }
     .btn:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -84,7 +99,8 @@
     .wrap {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 18px 18px 46px;
+      padding: 16px 14px 46px;
+      padding-bottom: max(46px, env(safe-area-inset-bottom));
       display: grid;
       grid-template-columns: 460px 1fr;
       gap: 16px;
@@ -101,6 +117,7 @@
       border: 1px solid rgba(0,0,0,0.08);
       box-shadow: 0 20px 45px rgba(0,0,0,0.10);
       padding: 16px;
+      min-width: 0;
     }
 
     h1 { margin: 0 0 10px 0; font-size: 18px; color: #111; }
@@ -199,11 +216,12 @@
       justify-content: space-between;
       gap: 10px;
       align-items: center;
-      word-break: break-word;
+      min-width: 0;
     }
 
-    /* ✅ LAYOUT-FIX: links flexibel, rechts stabil (kein Verrutschen) */
+    /* links flexibel */
     .left { flex: 1; min-width: 0; }
+
     .email {
       color: #111;
       overflow: hidden;
@@ -214,13 +232,14 @@
     }
     .sub { color: #666; font-size: 12px; margin-top: 4px; }
 
+    /* rechts stabil (Desktop) */
     .meta {
       display: flex;
       align-items: center;
       justify-content: flex-end;
       gap: 10px;
       flex-shrink: 0;
-      min-width: 260px;      /* ✅ rechte Spalte immer gleich breit */
+      min-width: 260px;
     }
     .time { color: #666; font-size: 12px; white-space: nowrap; }
 
@@ -246,7 +265,6 @@
 
     .hide { display: none; }
 
-    /* ✅ Kleine Helferklassen */
     .usedLabel {
       display: inline-flex;
       align-items: center;
@@ -264,8 +282,46 @@
       color: #fff;
       border: none;
       cursor: pointer;
+      touch-action: manipulation;
+      white-space: nowrap;
     }
     .btnSmall:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ✅ Mobile Optimierungen */
+    @media (max-width: 560px) {
+      .wrap { padding-top: 12px; }
+      .card { padding: 14px; border-radius: 16px; }
+
+      .actions { justify-content: flex-start; width: 100%; }
+      .btn { padding: 11px 14px; }
+
+      .btnGrid { grid-template-columns: 1fr; }
+
+      /* ALL panel: Suche + Domain untereinander */
+      .allRow {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* Liste: meta untereinander + volle Breite */
+      li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .email { max-width: 100%; }
+      .meta {
+        min-width: 0;
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+      .time { opacity: 0.9; }
+    }
+
+    @media (max-width: 380px) {
+      .pill { width: 100%; }
+      .btn { width: 100%; }
+    }
   </style>
 </head>
 
@@ -277,7 +333,7 @@
         <div class="pill adminTag">ADMIN</div>
       </div>
 
-      <div style="display:flex; gap:10px;">
+      <div class="actions">
         <button class="btn btn-back" id="backBtn">Zurück</button>
         <button class="btn btn-logout" id="logoutBtn">Logout</button>
       </div>
@@ -322,14 +378,14 @@
 
         <div class="controls">
           <!-- Suche + Domain -->
-          <div style="display:grid; grid-template-columns: 1fr 220px; gap:10px;">
+          <div class="allRow" style="display:grid; grid-template-columns: 1fr 220px; gap:10px;">
             <input id="allSearchInput" type="text" placeholder="Suche (Email/User) …" autocomplete="off" />
             <select id="domainSelect" disabled>
               <option value="">Domain: alle</option>
             </select>
           </div>
 
-          <!-- ✅ Benutzt Filter -->
+          <!-- Benutzt Filter -->
           <select id="usedSelect" disabled>
             <option value="">Benutzt: alle</option>
             <option value="used">nur benutzt</option>
@@ -378,7 +434,6 @@
   </div>
 
   <script>
-    // Header
     const adminName = document.getElementById("adminName");
 
     // Tabs
@@ -462,7 +517,7 @@
     }
 
     async function requireAdmin() {
-      const res = await fetch("/api/me", { credentials: "include" });
+      const res = await fetch("/api/me", { credentials: "include", cache: "no-store" });
       if (!res.ok) { location.href = "index.html"; return null; }
 
       const me = await res.json().catch(() => null);
@@ -721,7 +776,7 @@
     function applyAllFilters() {
       const q = (allSearchInput.value || "").trim().toLowerCase();
       const dom = (domainSelect.value || "").trim().toLowerCase();
-      const usedMode = (usedSelect.value || "").trim(); // "", "used", "unused"
+      const usedMode = (usedSelect.value || "").trim();
 
       let filtered = allEmailsCache;
 
@@ -771,7 +826,6 @@
         const meta = document.createElement("div");
         meta.className = "meta";
 
-        // used checkbox
         const label = document.createElement("label");
         label.className = "usedLabel";
 
@@ -796,7 +850,6 @@
               return;
             }
 
-            // ✅ Cache/Objekt updaten + neu filtern (wichtig für "nur benutzt / nur unbenutzt")
             it.used = newVal;
             const idx = allEmailsCache.findIndex(e => e.username === it.username && e.email === it.email);
             if (idx !== -1) allEmailsCache[idx].used = newVal;
@@ -810,7 +863,6 @@
         label.appendChild(cb);
         label.appendChild(document.createTextNode("benutzt"));
 
-        // delete button
         const del = document.createElement("button");
         del.textContent = "Löschen";
         del.className = "btnSmall";

@@ -16,7 +16,7 @@
         radial-gradient(1200px 600px at 80% 0%, rgba(24,90,157,0.35), transparent 55%),
         linear-gradient(135deg, #0b1220, #0f1c33);
       color: #fff;
-      padding: 0;
+      overflow-x: hidden;
     }
 
     .topbar {
@@ -26,12 +26,13 @@
       backdrop-filter: blur(10px);
       background: rgba(0,0,0,0.25);
       border-bottom: 1px solid rgba(255,255,255,0.10);
+      padding-top: env(safe-area-inset-top);
     }
 
     .topbar-inner {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 14px 18px;
+      padding: 12px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -46,6 +47,7 @@
       font-size: 14px;
       color: rgba(255,255,255,0.92);
       flex-wrap: wrap;
+      min-width: 0;
     }
 
     .pill {
@@ -55,9 +57,19 @@
       border: 1px solid rgba(255,255,255,0.12);
       font-size: 13px;
       white-space: nowrap;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .username { font-weight: 800; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
 
     .btn {
       padding: 10px 14px;
@@ -67,15 +79,17 @@
       font-size: 14px;
       color: white;
       transition: opacity 0.12s ease;
+      touch-action: manipulation;
+      white-space: nowrap;
     }
     .btn:hover { opacity: 0.9; }
-
     .btn-back { background: #1e88e5; }
 
     .wrap {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 70px 18px 90px;
+      padding: 44px 14px 90px;
+      padding-bottom: max(90px, env(safe-area-inset-bottom));
       display: flex;
       justify-content: center;
     }
@@ -128,14 +142,23 @@
       justify-content: space-between;
       gap: 10px;
       align-items: center;
-      word-break: break-word;
+      min-width: 0;
     }
 
     .text {
       color: rgba(255,255,255,0.95);
-      font-weight: 700;
+      font-weight: 800;
+      word-break: break-word;
+      min-width: 0;
+      flex: 1 1 auto;
     }
-    .time { color: rgba(255,255,255,0.70); font-size: 12px; white-space: nowrap; }
+
+    .time {
+      color: rgba(255,255,255,0.70);
+      font-size: 12px;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
 
     .empty {
       padding: 12px;
@@ -154,6 +177,29 @@
       word-break: break-word;
     }
     .status.ok { color: rgba(67,206,162,0.95); }
+
+    /* ✅ Mobile: Nachricht oben, Zeit darunter */
+    @media (max-width: 560px) {
+      .wrap { padding-top: 28px; }
+      .card { padding: 20px 16px; border-radius: 18px; }
+      h1 { font-size: 20px; }
+      .hint { font-size: 13px; }
+
+      li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .time { width: 100%; opacity: 0.9; }
+
+      .actions { justify-content: flex-start; }
+    }
+
+    @media (max-width: 380px) {
+      .btn { width: 100%; }
+      .actions { width: 100%; }
+      .pill { width: 100%; }
+    }
   </style>
 </head>
 
@@ -165,7 +211,7 @@
         <div class="pill" id="countPill">Nachrichten: …</div>
       </div>
 
-      <div style="display:flex; gap:10px;">
+      <div class="actions">
         <button class="btn btn-back" id="backBtn">Zurück</button>
       </div>
     </div>
