@@ -1,7 +1,10 @@
+export const config = { runtime: "nodejs" };
+
 export default async function handler(req, res) {
-  // Cookie löschen (Token invalidieren)
+  // Token-Cookie wirklich löschen (mehrere Varianten als Fallback)
   res.setHeader("Set-Cookie", [
-    "token=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0"
+    "token=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax; Secure",
+    "token=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax"
   ]);
 
   return res.status(200).json({ ok: true });
