@@ -34,6 +34,18 @@
       font-size: 14px;
     }
 
+    .hint {
+      text-align: left;
+      font-size: 12px;
+      margin-top: -4px;
+      margin-bottom: 8px;
+      color: #666;
+      min-height: 16px;
+    }
+
+    .hint.ok { color: #1b5e20; }
+    .hint.bad { color: #b71c1c; }
+
     button {
       width: 100%;
       padding: 10px;
@@ -44,6 +56,11 @@
       font-size: 15px;
       border-radius: 5px;
       background-color: #2196F3;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .error {
@@ -74,7 +91,6 @@
     const params = new URLSearchParams(location.search);
     if (params.get("loggedout") === "1") return;
 
-    // Cookie mitsenden
     const res = await fetch("/api/me", { credentials: "include" });
     if (res.ok) location.href = "dashboard.html";
   } catch {}
@@ -87,10 +103,13 @@
   <div id="errorBox" class="error"></div>
 
   <form id="registerForm" novalidate>
-    <input type="text" name="username" placeholder="Benutzername" required>
+    <input id="usernameInput" type="text" name="username" placeholder="Benutzername" required>
+    <div id="userHint" class="hint">3–20 Zeichen: a-z 0-9 _ -</div>
+
     <input type="password" name="password" placeholder="Passwort" required>
     <input type="password" name="confirm" placeholder="Passwort wiederholen" required>
-    <button type="submit">Registrieren</button>
+
+    <button id="submitBtn" type="submit" disabled>Registrieren</button>
   </form>
 
   <div class="link">
@@ -106,6 +125,21 @@
 <script>
 const form = document.getElementById("registerForm");
 const errorBox = document.getElementById("errorBox");
+const usernameInput = document.getElementById("usernameInput");
+const userHint = document.getElementById("userHint");
+const submitBtn = document.getElementById("submitBtn");
+
+let usernameOk = false;
+let checkTimer = null;
+let lastChecked = "";
+
+function normalizeUsername(u) {
+  return String(u || "").trim().toLowerCase();
+}
+
+function localValid(u) {
+  return /^[a-z0-9_-]{3,20}$/.test(u);
+}
 
 /* 🔁 loggedout-Flag beim Zurück-Navigieren mitnehmen */
 (() => {
@@ -116,11 +150,92 @@ const errorBox = document.getElementById("errorBox");
   }
 })();
 
+function setHint(text, cls) {
+  userHint.textContent = text;
+  userHint.className = "hint" + (cls ? " " + cls : "");
+}
+
+function updateSubmit() {
+  submitBtn.disabled = !usernameOk;
+}
+
+async function checkUsernameAvailability(raw) {
+  const u = normalizeUsername(raw);
+
+  if (!u) {
+    usernameOk = false;
+    setHint("3–20 Zeichen: a-z 0-9 _ -", "");
+    updateSubmit();
+    return;
+  }
+
+  // lokale Regeln sofort
+  if (!localValid(u)) {
+    usernameOk = false;
+    setHint("Ungültig: 3–20 Zeichen, nur a-z 0-9 _ -", "bad");
+    updateSubmit();
+    return;
+  }
+
+  // unnötige doppelte Checks vermeiden
+  if (u === lastChecked) return;
+
+  setHint("Prüfe Verfügbarkeit…", "");
+  usernameOk = false;
+  updateSubmit();
+
+  try {
+    const res = await fetch("/api/check-username?username=" + encodeURIComponent(u), {
+      credentials: "include"
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok || !data || data.ok !== true) {
+      usernameOk = false;
+      setHint("Konnte nicht prüfen. Bitte später erneut.", "bad");
+      updateSubmit();
+      return;
+    }
+
+    if (data.available) {
+      usernameOk = true;
+      setHint("✅ Verfügbar", "ok");
+    } else {
+      usernameOk = false;
+      setHint("❌ Schon vergeben", "bad");
+    }
+
+    lastChecked = u;
+    updateSubmit();
+  } catch {
+    usernameOk = false;
+    setHint("Konnte nicht prüfen. Bitte später erneut.", "bad");
+    updateSubmit();
+  }
+}
+
+// Debounce: erst 350ms nach letztem Tippen prüfen
+usernameInput.addEventListener("input", () => {
+  const u = normalizeUsername(usernameInput.value);
+  // optional: direkt im Feld normalisieren (kleinschreiben)
+  usernameInput.value = u;
+
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(() => checkUsernameAvailability(u), 350);
+});
+
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorBox.style.display = "none";
 
   const data = Object.fromEntries(new FormData(form));
+
+  if (!usernameOk) {
+    errorBox.textContent = "Bitte einen verfügbaren Benutzernamen wählen.";
+    errorBox.style.display = "block";
+    return;
+  }
 
   if (data.password !== data.confirm) {
     errorBox.textContent = "Passwörter stimmen nicht überein.";
@@ -153,6 +268,9 @@ document.getElementById("logoutLink").addEventListener("click", async (e) => {
   await fetch("/api/logout", { credentials: "include" });
   location.href = "index.html?loggedout=1";
 });
+
+// initial disable state
+updateSubmit();
 </script>
 
 </body>

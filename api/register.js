@@ -1,10 +1,13 @@
+export const config = { runtime: "nodejs" };
+
 import { kv } from "@vercel/kv";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 
 function setAuthCookie(res, token) {
+  // Wichtig für Vercel/Preview/cross-site: SameSite=None + Secure
   res.setHeader("Set-Cookie", [
-    `token=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${60 * 60 * 24 * 7}`
+    `token=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${60 * 60 * 24 * 7}`
   ]);
 }
 
@@ -15,9 +18,19 @@ async function readJson(req) {
   // Robust: raw body lesen
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
-  const raw = Buffer.concat(chunks).toString("utf8");
+  const raw = Buffer.concat(chunks).toString("utf8").trim();
   if (!raw) return {};
-  return JSON.parse(raw);
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+function normalizeUsername(u) {
+  return String(u || "").trim().toLowerCase();
+}
+
+function isValidUsername(u) {
+  // Muss zur UI passen:
+  // 3–20 Zeichen, nur a-z 0-9 _ -
+  return /^[a-z0-9_-]{3,20}$/.test(u);
 }
 
 export default async function handler(req, res) {
@@ -27,14 +40,13 @@ export default async function handler(req, res) {
     const body = await readJson(req);
 
     const { username, password, confirm } = body || {};
-    const u = String(username || "").trim().toLowerCase();
+    const u = normalizeUsername(username);
     const p = String(password || "");
     const c = String(confirm || "");
 
     if (!u || !p || !c) return res.status(400).send("Bitte alle Felder ausfüllen.");
+    if (!isValidUsername(u)) return res.status(400).send("Benutzername ungültig (3–20 Zeichen, a-z 0-9 _ -).");
     if (p !== c) return res.status(400).send("Passwörter stimmen nicht überein.");
-    if (u.length < 3) return res.status(400).send("Benutzername muss mind. 3 Zeichen haben.");
-    if (/\s/.test(u)) return res.status(400).send("Benutzername darf keine Leerzeichen enthalten.");
     if (p.length < 8) return res.status(400).send("Passwort muss mind. 8 Zeichen haben.");
 
     if (!process.env.JWT_SECRET) {
@@ -42,6 +54,8 @@ export default async function handler(req, res) {
     }
 
     const key = `user:${u}`;
+
+    // ✅ Server-seitig finaler Schutz
     const exists = await kv.get(key);
     if (exists) return res.status(409).send("Benutzername ist bereits vergeben.");
 
@@ -57,10 +71,8 @@ export default async function handler(req, res) {
 
     setAuthCookie(res, token);
     return res.status(200).json({ ok: true });
-
   } catch (err) {
     console.error("REGISTER ERROR:", err);
-    // Debug: echte Ursache zurückgeben
-    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
+    return res.status(500).send("Serverfehler");
   }
 }
