@@ -337,7 +337,11 @@
     });
 
     document.getElementById("myEmailsBtn").onclick = () => location.href = "myemails.html";
-    document.getElementById("inboxBtn").onclick = () => location.href = "inbox.html";
+   document.getElementById("inboxBtn").onclick = () => {
+  inboxBadge.classList.add("badge-hidden");
+  inboxBadge.textContent = "0";
+  location.href = "inbox.html";
+};
     document.getElementById("logoutBtn").onclick = async () => {
       await fetch("/api/logout", { credentials: "include" });
       location.href = "index.html?loggedout=1";
