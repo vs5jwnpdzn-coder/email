@@ -292,12 +292,19 @@
         <p class="hint">Alle gespeicherten Emails zusammen – jeweils mit Username.</p>
 
         <div class="controls">
-          <div style="display:grid; grid-template-columns: 1fr 220px; gap:10px;">
-            <input id="allSearchInput" type="text" placeholder="Suche (Email/User) …" autocomplete="off" />
-            <select id="domainSelect" disabled>
-              <option value="">Domain: alle</option>
-            </select>
-          </div>
+          <div style="display:grid; grid-template-columns: 1fr 220px 220px; gap:10px;">
+  <input id="allSearchInput" type="text" placeholder="Suche (Email/User) …" autocomplete="off" />
+
+  <select id="domainSelect" disabled>
+    <option value="">Domain: alle</option>
+  </select>
+
+  <select id="usedSelect" disabled>
+    <option value="">Status: alle</option>
+    <option value="used">nur benutzt</option>
+    <option value="unused">nur unbenutzt</option>
+  </select>
+</div>
 
           <div class="btnGrid" style="grid-template-columns: 1fr;">
             <button class="btn btn-load" id="loadAllBtn">Aktualisieren</button>
@@ -367,6 +374,7 @@
     const statusAll = document.getElementById("statusAll");
     const allSearchInput = document.getElementById("allSearchInput");
     const domainSelect = document.getElementById("domainSelect");
+    const usedSelect = document.getElementById("usedSelect");
 
     // Notify
     const notifyUserSelect = document.getElementById("notifyUserSelect");
@@ -405,6 +413,7 @@
       loadAllBtn.disabled = isLoading;
       allSearchInput.disabled = isLoading;
       domainSelect.disabled = isLoading || !allEmailsCache.length;
+      usedSelect.disabled = isLoading || !allEmailsCache.length;
 
       // NOTIFY tab
       notifyUserSelect.disabled = isLoading;
@@ -676,23 +685,30 @@
         list.map(d => `<option value="${d.replace(/"/g, "&quot;")}">${d}</option>`).join("");
 
       domainSelect.disabled = false;
+      usedSelect.disabled = false;
     }
 
     function applyAllFilters() {
-      const q = (allSearchInput.value || "").trim().toLowerCase();
-      const dom = (domainSelect.value || "").trim().toLowerCase();
+  const q = (allSearchInput.value || "").trim().toLowerCase();
+  const dom = (domainSelect.value || "").trim().toLowerCase();
+  const usedMode = (usedSelect.value || "").trim(); // "", "used", "unused"
 
-      let filtered = allEmailsCache;
+  let filtered = allEmailsCache;
 
-      if (dom) filtered = filtered.filter(it => getDomain(it.email) === dom);
+  if (dom) filtered = filtered.filter(it => getDomain(it.email) === dom);
 
-      if (q) {
-        filtered = filtered.filter(it =>
-          String(it.email || "").toLowerCase().includes(q) ||
-          String(it.username || "").toLowerCase().includes(q)
-        );
-      }
+  if (usedMode === "used") {
+    filtered = filtered.filter(it => !!it.used);
+  } else if (usedMode === "unused") {
+    filtered = filtered.filter(it => !it.used);
+  }
 
+  if (q) {
+    filtered = filtered.filter(it =>
+      String(it.email || "").toLowerCase().includes(q) ||
+      String(it.username || "").toLowerCase().includes(q)
+    );
+  }
       renderAllEmails(filtered);
     }
 
@@ -740,31 +756,34 @@
         cb.checked = !!it.used;
 
         cb.addEventListener("change", async () => {
-          const newVal = cb.checked;
-          cb.disabled = true;
-          try {
-            const res = await fetch("/api/admin?action=email-used", {
-              method: "PATCH",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ username: it.username, email: it.email, used: newVal })
-            });
+  const newVal = cb.checked;
+  cb.disabled = true;
+  try {
+    const res = await fetch("/api/admin?action=email-used", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: it.username, email: it.email, used: newVal })
+    });
 
-            if (!res.ok) {
-              cb.checked = !newVal;
-              alert(await res.text());
-              return;
-            }
+    if (!res.ok) {
+      cb.checked = !newVal;
+      alert(await res.text());
+      return;
+    }
 
-            // ✅ WICHTIG: Frontend-Daten updaten, damit Re-Render nicht zurücksetzt
-            it.used = newVal;
-            const idx = allEmailsCache.findIndex(e => e.username === it.username && e.email === it.email);
-            if (idx !== -1) allEmailsCache[idx].used = newVal;
+    // ✅ Cache/Objekt updaten (wichtig!)
+    it.used = newVal;
+    const idx = allEmailsCache.findIndex(e => e.username === it.username && e.email === it.email);
+    if (idx !== -1) allEmailsCache[idx].used = newVal;
 
-          } finally {
-            cb.disabled = false;
-          }
-        });
+    // ✅ Liste neu filtern/anzeigen (damit "nur benutzt/nur unbenutzt" sofort stimmt)
+    applyAllFilters();
+
+  } finally {
+    cb.disabled = false;
+  }
+});
 
         label.appendChild(cb);
         label.appendChild(document.createTextNode("benutzt"));
@@ -991,6 +1010,10 @@
       await fetch("/api/logout", { credentials: "include" });
       location.href = "index.html?loggedout=1";
     });
+    usedSelect.addEventListener("change", () => {
+  if (!allEmailsCache.length) return;
+  applyAllFilters();
+});
 
     (async () => {
       const me = await requireAdmin();
