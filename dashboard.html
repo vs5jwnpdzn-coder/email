@@ -14,8 +14,8 @@
       background:
         radial-gradient(1200px 600px at 20% 10%, rgba(67,206,162,0.35), transparent 60%),
         radial-gradient(1200px 600px at 80% 0%, rgba(24,90,157,0.35), transparent 55%),
-        linear-gradient(135deg, #0b1220, #0f1c33);
-      color: #fff;
+        linear-gradient(135deg, #f7f9fc, #eef3fb);
+      color: #111;
     }
 
     .topbar {
@@ -23,8 +23,8 @@
       top: 0;
       z-index: 50;
       backdrop-filter: blur(10px);
-      background: rgba(0,0,0,0.25);
-      border-bottom: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.85);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
     }
 
     .topbar-inner {
@@ -42,15 +42,15 @@
       align-items: center;
       gap: 10px;
       font-size: 14px;
-      color: rgba(255,255,255,0.92);
+      color: #222;
       flex-wrap: wrap;
     }
 
     .pill {
       padding: 8px 12px;
       border-radius: 999px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
       font-size: 13px;
       white-space: nowrap;
     }
@@ -64,7 +64,6 @@
       cursor: pointer;
       font-size: 14px;
       color: white;
-      transition: opacity 0.12s ease;
     }
 
     .btn-mails { background: #1e88e5; }
@@ -74,68 +73,37 @@
     .wrap {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 70px 18px 90px;
+      padding: 80px 18px;
       display: flex;
       justify-content: center;
     }
 
     .card {
       width: 100%;
-      max-width: 720px;
-      background: rgba(0,0,0,0.22);
-      border-radius: 22px;
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 24px 70px rgba(0,0,0,0.55);
-      padding: 42px 34px 36px;
+      max-width: 620px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.12);
+      padding: 40px 34px 36px;
       text-align: center;
     }
 
-    /* ✅ HERO */
-    .hero {
-      font-size: 44px;
+    .headline {
+      font-size: 38px;
       font-weight: 900;
-      letter-spacing: 0.6px;
-      margin: 2px 0 10px;
-      line-height: 1.05;
-
-      /* ✅ kein gradient, aber „knallt“ */
-      color: #ffffff;
-      text-shadow:
-        0 2px 0 rgba(0,0,0,0.35),
-        0 18px 55px rgba(30,136,229,0.30),
-        0 18px 55px rgba(67,206,162,0.20);
-    }
-
-    .subhero {
-      margin: 0 0 22px 0;
-      font-size: 14px;
-      color: rgba(255,255,255,0.80);
-      line-height: 1.45;
-    }
-
-    .avg {
-      margin-top: 18px;
-      padding: 14px 16px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.06);
-      font-size: 18px;
-      font-weight: 900;
-      color: rgba(255,255,255,0.96);
-      display: inline-block;
-      box-shadow: 0 18px 55px rgba(0,0,0,0.25);
+      letter-spacing: 1px;
+      margin-bottom: 30px;
     }
 
     .composer {
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 12px;
-      margin-top: 10px;
     }
 
     @media (max-width: 560px) {
       .composer { grid-template-columns: 1fr; }
-      .hero { font-size: 38px; }
     }
 
     .email-input {
@@ -143,19 +111,13 @@
       padding: 14px 16px;
       font-size: 15px;
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.18);
+      border: 1px solid rgba(0,0,0,0.2);
       outline: none;
-      background: rgba(0,0,0,0.25);
-      color: #fff;
-    }
-
-    .email-input::placeholder {
-      color: rgba(255,255,255,0.55);
     }
 
     .email-input:focus {
-      border-color: rgba(30,136,229,0.85);
-      box-shadow: 0 0 0 4px rgba(30,136,229,0.18);
+      border-color: #1e88e5;
+      box-shadow: 0 0 0 4px rgba(30,136,229,0.15);
     }
 
     .email-input.ok {
@@ -170,7 +132,7 @@
     .send-btn {
       padding: 14px 18px;
       font-size: 15px;
-      font-weight: 800;
+      font-weight: 700;
       border-radius: 14px;
       border: none;
       cursor: pointer;
@@ -183,14 +145,6 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
-
-    .msg {
-      margin-top: 14px;
-      font-size: 14px;
-      min-height: 18px;
-      color: #ff9b9b;
-    }
-    .msg.success { color: #9dffb0; }
 
     .badge-dot{
       display:inline-flex;
@@ -207,10 +161,79 @@
       color:#fff;
     }
     .badge-hidden{ display:none; }
+
+    /* ✅ TOASTS */
+    .toast-wrap{
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 9999;
+      display: grid;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast{
+      pointer-events: auto;
+      min-width: 260px;
+      max-width: 360px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(0,0,0,0.10);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.14);
+      background: rgba(255,255,255,0.96);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      animation: toastIn 160ms ease-out;
+    }
+    @keyframes toastIn{
+      from{ transform: translateY(-6px); opacity: 0; }
+      to{ transform: translateY(0); opacity: 1; }
+    }
+    .toast .icon{
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #fff;
+      flex: 0 0 auto;
+      margin-top: 1px;
+    }
+    .toast .txt{
+      font-size: 14px;
+      color: #111;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+    .toast.success { border-color: rgba(67,206,162,0.40); }
+    .toast.success .icon{ background: #43cea2; }
+
+    .toast.warn { border-color: rgba(255,193,7,0.55); }
+    .toast.warn .icon{ background: #ffc107; color:#111; }
+
+    .toast.error { border-color: rgba(229,57,53,0.35); }
+    .toast.error .icon{ background: #e53935; }
+
+    .toast .x{
+      margin-left: auto;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      opacity: 0.55;
+    }
+    .toast .x:hover{ opacity: 0.9; }
   </style>
 </head>
 
 <body>
+  <!-- ✅ Toast container -->
+  <div class="toast-wrap" id="toastWrap"></div>
+
   <div class="topbar">
     <div class="topbar-inner">
       <div class="who">
@@ -233,8 +256,7 @@
 
   <div class="wrap">
     <div class="card">
-      <div class="hero">BIS ZU 10.000€<br>MIT EINER EMAIL</div>
-      <p class="subhero">Trag eine Email ein & sichere dir deine Chance.</p>
+      <div class="headline">EMAIL = GELD</div>
 
       <div class="composer">
         <input
@@ -247,26 +269,46 @@
         >
         <button id="sendBtn" class="send-btn">Hinzufügen</button>
       </div>
-
-      <div id="msg" class="msg"></div>
-
-      <div class="avg">IM DURCHSCHNITT 2,12€ PRO EMAIL</div>
     </div>
   </div>
 
   <script>
-    const msg = document.getElementById("msg");
     const sendBtn = document.getElementById("sendBtn");
     const emailInput = document.getElementById("emailInput");
     const countPill = document.getElementById("countPill");
     const inboxBadge = document.getElementById("inboxBadge");
+    const toastWrap = document.getElementById("toastWrap");
 
     let inFlight = false;
     const emailValid = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-    function setMsg(text, ok=false) {
-      msg.className = "msg" + (ok ? " success" : "");
-      msg.textContent = text || "";
+    /* ✅ Toast helper */
+    function showToast(type, text, ms = 2400) {
+      const t = document.createElement("div");
+      t.className = "toast " + type;
+
+      const icon = document.createElement("div");
+      icon.className = "icon";
+      icon.textContent = type === "success" ? "✓" : (type === "warn" ? "!" : "✕");
+
+      const txt = document.createElement("div");
+      txt.className = "txt";
+      txt.textContent = text || "";
+
+      const x = document.createElement("button");
+      x.className = "x";
+      x.innerHTML = "&times;";
+      x.onclick = () => t.remove();
+
+      t.appendChild(icon);
+      t.appendChild(txt);
+      t.appendChild(x);
+
+      toastWrap.appendChild(t);
+
+      window.setTimeout(() => {
+        if (t.isConnected) t.remove();
+      }, ms);
     }
 
     function flashInput(state) {
@@ -314,17 +356,22 @@
       } catch {}
     }
 
+    function looksLikeDuplicate(text) {
+      const t = String(text || "").toLowerCase();
+      return t.includes("bereits") || t.includes("schon") || t.includes("duplicate") || t.includes("duplikat");
+    }
+
     async function sendEmail() {
       if (inFlight) return;
 
       const email = emailInput.value.trim().toLowerCase();
-      setMsg("");
 
       if (!email || !emailValid(email)) {
         flashInput("bad");
         emailInput.focus();
         emailInput.select();
-        return setMsg("Ungültige Email-Adresse.");
+        showToast("error", "Ungültige Email-Adresse.");
+        return;
       }
 
       inFlight = true;
@@ -339,22 +386,29 @@
         });
 
         const text = await res.text();
+
         if (!res.ok) {
           flashInput("bad");
-          setMsg(text || "Fehler beim Speichern.");
           emailInput.focus();
           emailInput.select();
+
+          // ✅ Duplikat als gelber Toast
+          if (res.status === 409 || looksLikeDuplicate(text)) {
+            showToast("warn", "Diese Email hast du schon gespeichert.");
+          } else {
+            showToast("error", text || "Fehler beim Speichern.");
+          }
           return;
         }
 
         flashInput("ok");
-        setMsg("Gespeichert ✅", true);
+        showToast("success", "✅ Email gespeichert");
         emailInput.value = "";
         await refreshCount();
         emailInput.focus();
       } catch {
         flashInput("bad");
-        setMsg("Server nicht erreichbar.");
+        showToast("error", "Server nicht erreichbar.");
       } finally {
         inFlight = false;
         sendBtn.disabled = false;
