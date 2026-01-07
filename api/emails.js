@@ -30,7 +30,8 @@ export default async function handler(req, res) {
     const username = await getUsernameFromToken(req);
     if (!username) return res.status(401).send("Nicht eingeloggt.");
 
-    const raw = await kv.lrange(`emails:${username}`, 0, 199);
+    const key = `emails:${username}`;
+    const raw = await kv.lrange(key, 0, 199);
 
     const emails = [];
     for (const item of raw || []) {
@@ -41,9 +42,18 @@ export default async function handler(req, res) {
       } catch {}
     }
 
-    return res.status(200).json({ ok: true, emails });
+    return res.status(200).json({
+      ok: true,
+      emails,
+      debug: {
+        username,
+        key,
+        rawCount: (raw || []).length,
+        parsedCount: emails.length
+      }
+    });
   } catch (err) {
     console.error("EMAILS ERROR:", err);
-    return res.status(500).send("Serverfehler");
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }

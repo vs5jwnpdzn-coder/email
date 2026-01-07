@@ -24,8 +24,10 @@ async function getUsername(req) {
 }
 
 async function readJsonBody(req) {
+  // Wenn es doch über Next.js API Route läuft, ist req.body oft schon da:
   if (req.body && typeof req.body === "object") return req.body;
 
+  // In Vercel Functions (ohne Next) müssen wir den Stream lesen:
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
   const raw = Buffer.concat(chunks).toString("utf8").trim();
@@ -42,16 +44,28 @@ export default async function handler(req, res) {
     if (!username) return res.status(401).send("Nicht eingeloggt");
 
     const body = await readJsonBody(req);
-    if (!body || typeof body.email !== "string") return res.status(400).send("Email fehlt");
+    if (!body || typeof body.email !== "string") {
+      return res.status(400).send("Email fehlt");
+    }
 
     const email = body.email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) return res.status(400).send("Ungültige Email");
+    if (!emailRegex.test(email)) {
+      return res.status(400).send("Ungültige Email");
+    }
 
-    await kv.lpush(`emails:${username}`, JSON.stringify({ email, ts: Date.now() }));
-    return res.status(200).json({ ok: true });
+    const key = `emails:${username}`;
+    await kv.lpush(key, JSON.stringify({ email, ts: Date.now() }));
+
+    // ✅ Debug: Länge nach dem Speichern
+    const len = await kv.llen(key);
+
+    return res.status(200).json({
+      ok: true,
+      debug: { username, key, len }
+    });
   } catch (err) {
     console.error("SEND ERROR:", err);
-    return res.status(500).send("Serverfehler");
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }
