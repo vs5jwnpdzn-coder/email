@@ -70,6 +70,7 @@
     .btn-mails { background: #1e88e5; }
     .btn-logout { background: #e53935; }
     .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .wrap {
       max-width: 1000px;
@@ -90,7 +91,6 @@
       text-align: center;
     }
 
-    /* HERO */
     .hero {
       font-size: 44px;
       font-weight: 900;
@@ -147,9 +147,7 @@
       color: #fff;
     }
 
-    .email-input::placeholder {
-      color: rgba(255,255,255,0.55);
-    }
+    .email-input::placeholder { color: rgba(255,255,255,0.55); }
 
     .email-input:focus {
       border-color: rgba(30,136,229,0.85);
@@ -177,10 +175,7 @@
       white-space: nowrap;
     }
 
-    .send-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .msg {
       margin-top: 14px;
@@ -277,7 +272,7 @@
 </head>
 
 <body>
-  <!-- Nutzungsbedingungen Popup (kommt bei JEDEM Login) -->
+  <!-- Nutzungsbedingungen Popup -->
   <div class="modal-backdrop hide" id="tosBackdrop">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-head">
@@ -359,6 +354,8 @@
     const tosDeclineBtn = document.getElementById("tosDeclineBtn");
 
     let inFlight = false;
+    let tosAccepted = false;
+
     const emailValid = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
     function setMsg(text, ok=false) {
@@ -370,6 +367,15 @@
       emailInput.classList.remove("ok", "bad");
       if (state) emailInput.classList.add(state);
       if (state) setTimeout(() => emailInput.classList.remove(state), 450);
+    }
+
+    function setDashboardLocked(locked) {
+      // Alles sperren bis akzeptiert
+      emailInput.disabled = locked;
+      sendBtn.disabled = locked || inFlight;
+      document.getElementById("myEmailsBtn").disabled = locked;
+      document.getElementById("inboxBtn").disabled = locked;
+      document.getElementById("logoutBtn").disabled = false; // logout darf immer
     }
 
     async function checkLogin() {
@@ -405,7 +411,7 @@
     }
 
     async function sendEmail() {
-      if (inFlight) return;
+      if (inFlight || !tosAccepted) return;
 
       const email = emailInput.value.trim().toLowerCase();
       setMsg("");
@@ -451,20 +457,24 @@
       }
     }
 
-    // TOS: IMMER anzeigen
     function showTos() {
       tosBackdrop.classList.remove("hide");
+      setDashboardLocked(true);
       setTimeout(() => tosAcceptBtn.focus(), 50);
     }
+
     function hideTos() {
       tosBackdrop.classList.add("hide");
+      setDashboardLocked(false);
     }
 
-    async function ensureTosAccepted() {
+    function ensureTosEveryLogin() {
+      // ✅ kommt bei JEDEM Login (kein localStorage mehr)
       showTos();
 
-      return await new Promise(resolve => {
+      return new Promise(resolve => {
         const accept = () => {
+          tosAccepted = true;
           hideTos();
           cleanup();
           resolve(true);
@@ -473,12 +483,15 @@
         const decline = async () => {
           cleanup();
 
+          // ✅ ausloggen (POST ist sauberer)
           await fetch("/api/logout", {
+            method: "POST",
             credentials: "include",
             cache: "no-store"
           }).catch(() => {});
 
-          location.href = "index.html?tos=declined";
+          // ✅ zurück zum Login (replace verhindert Back/Loop)
+          window.location.replace("index.html?tos=declined");
           resolve(false);
         };
 
@@ -497,9 +510,13 @@
       if (e.key === "Enter") { e.preventDefault(); sendEmail(); }
     });
 
-    document.getElementById("myEmailsBtn").onclick = () => location.href = "myemails.html";
+    document.getElementById("myEmailsBtn").onclick = () => {
+      if (!tosAccepted) return;
+      location.href = "myemails.html";
+    };
 
     document.getElementById("inboxBtn").onclick = () => {
+      if (!tosAccepted) return;
       inboxBadge.classList.add("badge-hidden");
       inboxBadge.textContent = "0";
       location.href = "inbox.html";
@@ -511,7 +528,7 @@
     });
 
     document.getElementById("logoutBtn").onclick = async () => {
-      await fetch("/api/logout", { credentials: "include" });
+      await fetch("/api/logout", { method: "POST", credentials: "include" }).catch(()=>{});
       location.href = "index.html?loggedout=1";
     };
 
@@ -519,8 +536,8 @@
       const me = await checkLogin();
       if (!me) return;
 
-      // Erst Nutzungsbedingungen akzeptieren, dann Dashboard freigeben
-      const ok = await ensureTosAccepted();
+      // ✅ Popup immer zeigen
+      const ok = await ensureTosEveryLogin();
       if (!ok) return;
 
       await refreshCount();
