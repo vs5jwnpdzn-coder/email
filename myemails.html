@@ -2,100 +2,134 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Meine Emails</title>
 
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
 
     body {
-      min-height: 100vh;
       margin: 0;
-      background: #f4f4f4;
-      padding: 80px 20px 20px;
+      min-height: 100vh;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(67,206,162,0.35), transparent 60%),
+        radial-gradient(1200px 600px at 80% 0%, rgba(24,90,157,0.35), transparent 55%),
+        linear-gradient(135deg, #0b1220, #0f1c33);
+      color: #fff;
+      padding: 0;
     }
 
-    .top-left {
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      font-size: 14px;
-      color: #333;
-      background: rgba(255,255,255,0.95);
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      z-index: 10;
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
     }
 
-    .top-right {
-      position: fixed;
-      top: 16px;
-      right: 16px;
+    .topbar-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 14px 18px;
       display: flex;
-      gap: 10px;
-      z-index: 10;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
-    .username { font-weight: bold; }
+    .who {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.92);
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .username { font-weight: 800; }
 
     .btn {
       padding: 10px 14px;
-      border-radius: 8px;
+      border-radius: 10px;
       border: none;
       cursor: pointer;
       font-size: 14px;
       color: white;
+      transition: opacity 0.12s ease;
     }
-
-    .btn-back { background: #2196F3; }
     .btn:hover { opacity: 0.9; }
 
-    .card {
-      width: 700px;
-      max-width: 95vw;
-      background: white;
-      border-radius: 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-      padding: 22px;
+    .btn-back { background: #1e88e5; }
+
+    .wrap {
+      max-width: 1000px;
       margin: 0 auto;
+      padding: 70px 18px 90px;
+      display: flex;
+      justify-content: center;
     }
 
-    .header {
+    .card {
+      width: 100%;
+      max-width: 760px;
+      background: rgba(0,0,0,0.22);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+      padding: 26px 22px;
+    }
+
+    .headerLine {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
       margin-bottom: 10px;
     }
 
     h1 {
       margin: 0;
       font-size: 22px;
-      color: #222;
+      color: rgba(255,255,255,0.96);
+      font-weight: 900;
+      letter-spacing: 0.2px;
     }
 
     .count {
       font-size: 13px;
-      color: #444;
-      background: #f1f1f1;
-      border: 1px solid #e8e8e8;
-      padding: 6px 10px;
+      color: rgba(255,255,255,0.88);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 7px 10px;
       border-radius: 999px;
       white-space: nowrap;
     }
 
     .hint {
-      margin: 0 0 18px 0;
-      color: #666;
+      margin: 0 0 16px 0;
+      color: rgba(255,255,255,0.75);
       font-size: 14px;
+      line-height: 1.45;
     }
 
     .empty {
       padding: 12px;
-      background: #fafafa;
-      border: 1px solid #eee;
-      border-radius: 10px;
-      color: #444;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
+      color: rgba(255,255,255,0.85);
       font-size: 14px;
     }
 
@@ -103,10 +137,10 @@
 
     li {
       padding: 12px;
-      border: 1px solid #eee;
-      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 12px;
       margin-bottom: 10px;
-      background: #fafafa;
+      background: rgba(255,255,255,0.06);
       word-break: break-word;
       display: flex;
       justify-content: space-between;
@@ -114,34 +148,44 @@
       align-items: center;
     }
 
-    .email { color: #222; }
-    .time { color: #666; font-size: 12px; white-space: nowrap; }
+    .email {
+      color: rgba(255,255,255,0.95);
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 520px;
+    }
+
+    .time { color: rgba(255,255,255,0.70); font-size: 12px; white-space: nowrap; }
   </style>
 </head>
 
 <body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="who">
+        <div class="pill">Angemeldet als <span class="username" id="userName">Lade…</span></div>
+        <div class="pill" id="countPill">Emails: …</div>
+      </div>
 
-  <!-- TOP LEFT -->
-  <div class="top-left">
-    Angemeldet als:
-    <span class="username" id="userName">Lade…</span>
-  </div>
-
-  <!-- TOP RIGHT: NUR Zurück -->
-  <div class="top-right">
-    <button class="btn btn-back" id="backBtn">Zurück</button>
-  </div>
-
-  <!-- CENTER -->
-  <div class="card">
-    <div class="header">
-      <h1>Meine Emails</h1>
-      <div class="count" id="countPill">Emails: …</div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-back" id="backBtn">Zurück</button>
+      </div>
     </div>
+  </div>
 
-    <p class="hint">Hier siehst du alle gespeicherten Emails deines Accounts.</p>
+  <div class="wrap">
+    <div class="card">
+      <div class="headerLine">
+        <h1>Meine Emails</h1>
+        <div class="count" id="countPillDup" style="display:none;"></div>
+      </div>
 
-    <div id="listBox"></div>
+      <p class="hint">Hier siehst du alle gespeicherten Emails deines Accounts.</p>
+
+      <div id="listBox"></div>
+    </div>
   </div>
 
   <script>
@@ -154,7 +198,7 @@
     }
 
     async function requireLogin() {
-      const meRes = await fetch("/api/me", { credentials: "include" });
+      const meRes = await fetch("/api/me?t=" + Date.now(), { credentials: "include", cache: "no-store" });
       if (!meRes.ok) {
         location.href = "index.html";
         return null;
@@ -168,7 +212,7 @@
       const me = await requireLogin();
       if (!me) return;
 
-      const res = await fetch("/api/emails", { credentials: "include" });
+      const res = await fetch("/api/emails?t=" + Date.now(), { credentials: "include", cache: "no-store" });
       if (!res.ok) {
         listBox.innerHTML = `<div class="empty">Emails konnten nicht geladen werden.</div>`;
         countPill.textContent = "Emails: 0";
@@ -216,6 +260,5 @@
       countPill.textContent = "Emails: 0";
     });
   </script>
-
 </body>
 </html>
