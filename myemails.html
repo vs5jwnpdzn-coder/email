@@ -163,7 +163,9 @@
 
       // /api/emails
       statusBox.textContent += "\n\n3) Lade /api/emails …";
-      const res = await fetch("/api/emails");
+      const res = await fetch("/api/emails", {
+  credentials: "include"   // ⭐ wichtig
+});
       const text = await res.text();
       statusBox.textContent += "\n/api/emails Status: " + res.status + "\n/api/emails Body: " + text;
 

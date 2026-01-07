@@ -22,7 +22,7 @@
       left: 16px;
       font-size: 14px;
       color: #333;
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.95);
       padding: 8px 12px;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -96,18 +96,27 @@
 
 <body>
 
+  <!-- TOP LEFT -->
   <div class="top-left">
     Angemeldet als:
     <span class="username" id="userName">Lade…</span>
   </div>
 
+  <!-- TOP RIGHT -->
   <div class="top-right">
     <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
     <button class="btn btn-logout" id="logoutBtn">Logout</button>
   </div>
 
+  <!-- CENTER -->
   <div class="card">
-    <input class="email-input" id="emailInput" type="email" placeholder="Email eingeben" required>
+    <input
+      class="email-input"
+      id="emailInput"
+      type="email"
+      placeholder="Email eingeben"
+      required
+    >
     <button class="send-btn" id="sendBtn">Senden</button>
     <div class="msg" id="msg"></div>
   </div>
@@ -115,10 +124,18 @@
   <script>
     const msg = document.getElementById("msg");
 
+    // 🔐 Login prüfen
     async function checkLogin() {
       try {
-        const res = await fetch("/api/me");
-        if (!res.ok) { location.href = "index.html"; return; }
+        const res = await fetch("/api/me", {
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          location.href = "index.html";
+          return;
+        }
+
         const data = await res.json();
         document.getElementById("userName").textContent = data.username;
       } catch {
@@ -126,15 +143,20 @@
       }
     }
 
+    // 🚪 Logout
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await fetch("/api/logout");
+      await fetch("/api/logout", {
+        credentials: "include"
+      });
       location.href = "index.html?loggedout=1";
     });
 
+    // 📬 Meine Emails
     document.getElementById("myEmailsBtn").addEventListener("click", () => {
       location.href = "myemails.html";
     });
 
+    // ✉️ Email senden
     document.getElementById("sendBtn").addEventListener("click", async () => {
       const input = document.getElementById("emailInput");
       const email = input.value.trim();
@@ -143,12 +165,19 @@
       msg.textContent = "";
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email) { msg.textContent = "Bitte eine Email eingeben."; return; }
-      if (!emailRegex.test(email)) { msg.textContent = "Bitte eine gültige Email-Adresse eingeben."; return; }
+      if (!email) {
+        msg.textContent = "Bitte eine Email eingeben.";
+        return;
+      }
+      if (!emailRegex.test(email)) {
+        msg.textContent = "Bitte eine gültige Email-Adresse eingeben.";
+        return;
+      }
 
       try {
         const res = await fetch("/api/send", {
           method: "POST",
+          credentials: "include",   // ⭐ WICHTIG
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email })
         });
@@ -163,6 +192,7 @@
         msg.textContent = "Email gespeichert ✅";
         msg.classList.add("success");
         input.value = "";
+
       } catch {
         msg.textContent = "Server nicht erreichbar.";
       }
@@ -170,5 +200,6 @@
 
     checkLogin();
   </script>
+
 </body>
 </html>
