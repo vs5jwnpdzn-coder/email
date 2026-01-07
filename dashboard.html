@@ -18,25 +18,49 @@
     }
 
     .card {
-      width: 420px;
+      width: 700px;
+      max-width: 95vw;
       background: white;
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-      padding: 24px;
+      padding: 18px;
     }
 
-    .top {
+    /* Top bar */
+    .topbar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 22px;
-      color: #222;
+    .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .who {
+      font-size: 14px;
+      color: #333;
+      white-space: nowrap;
+    }
+
+    .username {
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+      display: inline-block;
+      vertical-align: bottom;
+    }
+
+    .right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .btn {
@@ -45,45 +69,86 @@
       border: none;
       cursor: pointer;
       color: white;
-      background: #e53935;
       font-size: 14px;
     }
+
+    .btn-mails { background: #2196F3; }
+    .btn-logout { background: #e53935; }
 
     .btn:hover { opacity: 0.9; }
 
-    .hello {
-      margin: 0;
-      color: #444;
-      font-size: 16px;
-      line-height: 1.4;
+    /* Center content */
+    .center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 10px 30px;
+      gap: 12px;
     }
 
-    .info {
-      margin-top: 14px;
+    .email-input {
+      width: 420px;
+      max-width: 100%;
       padding: 12px;
-      background: #f7f7f7;
-      border-radius: 10px;
-      color: #444;
       font-size: 14px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      outline: none;
     }
 
-    .muted { color: #666; }
+    .email-input:focus {
+      border-color: #999;
+    }
+
+    .send-btn {
+      width: 420px;
+      max-width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      color: white;
+      background: #4CAF50;
+    }
+
+    .send-btn:hover { opacity: 0.92; }
+
+    .msg {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #444;
+      text-align: center;
+    }
   </style>
 </head>
 
 <body>
 
   <div class="card">
-    <div class="top">
-      <h1>Dashboard</h1>
-      <button class="btn" id="logoutBtn">Logout</button>
+    <!-- Top bar -->
+    <div class="topbar">
+      <!-- oben links: angemeldet als -->
+      <div class="left">
+        <div class="who">
+          Angemeldet als:
+          <span class="username" id="userName">Lade…</span>
+        </div>
+      </div>
+
+      <!-- oben rechts: meine emails + logout -->
+      <div class="right">
+        <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
+        <button class="btn btn-logout" id="logoutBtn">Logout</button>
+      </div>
     </div>
 
-    <p class="hello" id="hello">Lade…</p>
-
-    <div class="info">
-      <div><strong>Status:</strong> Eingeloggt</div>
-      <div class="muted" id="hint"></div>
+    <!-- Mitte: input + senden -->
+    <div class="center">
+      <input class="email-input" id="emailInput" type="email" placeholder="Email eingeben">
+      <button class="send-btn" id="sendBtn">Senden</button>
+      <div class="msg" id="msg"></div>
     </div>
   </div>
 
@@ -92,16 +157,12 @@
       try {
         const res = await fetch("/api/me");
         if (!res.ok) {
-          // ❌ Nicht eingeloggt → zurück zum Login
           window.location.href = "index.html";
           return;
         }
-
         const data = await res.json();
-        document.getElementById("hello").textContent = "Hallo, " + data.username + " 🎉";
-        document.getElementById("hint").textContent = "Du bist erfolgreich eingeloggt.";
-      } catch (err) {
-        // ❌ Serverproblem → zurück zum Login
+        document.getElementById("userName").textContent = data.username;
+      } catch {
         window.location.href = "index.html";
       }
     }
@@ -112,6 +173,24 @@
       } finally {
         window.location.href = "index.html";
       }
+    });
+
+    document.getElementById("myEmailsBtn").addEventListener("click", () => {
+      // Platzhalter: hier später auf "meine-emails.html" oder ähnliches weiterleiten
+      alert("Hier kommt später deine Seite: 'Meine Emails'");
+    });
+
+    document.getElementById("sendBtn").addEventListener("click", () => {
+      const email = document.getElementById("emailInput").value.trim();
+      const msg = document.getElementById("msg");
+
+      if (!email) {
+        msg.textContent = "Bitte eine Email eingeben.";
+        return;
+      }
+
+      // Platzhalter: hier später API call zum Senden
+      msg.textContent = "Email wurde (Demo) gesendet an: " + email;
     });
 
     checkLogin();
