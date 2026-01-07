@@ -206,7 +206,7 @@
     }
     .badge-hidden{ display:none; }
 
-    /* ✅ Nutzungsbedingungen Modal */
+    /* Nutzungsbedingungen Modal */
     .modal-backdrop{
       position: fixed;
       inset: 0;
@@ -277,7 +277,7 @@
 </head>
 
 <body>
-  <!-- ✅ Nutzungsbedingungen Popup -->
+  <!-- Nutzungsbedingungen Popup (kommt bei JEDEM Login) -->
   <div class="modal-backdrop hide" id="tosBackdrop">
     <div class="modal" role="dialog" aria-modal="true">
       <div class="modal-head">
@@ -291,7 +291,7 @@
           <li>Du gibst nur Emails ein, die dir oder deinen Engsten nicht gehören, da sie potenziell missbraucht werden.</li>
           <li>Deine Eingabe ist bei uns geschützt und das Opfer wird niemals wissen, dass du diese Email weitergegeben hast.</li>
           <li>Eingabe von Spam/-Fake-Emails führt zum Bann.</li>
-          <li>Keine Garantie auf Auszahlungen; Auszahlungen finden nur statt, wenn eine Email mit Erfolg missbraucht wurde -> je mehr Emails du abschickst desto wahrscheinlicher ist der Missbrauch.</li>
+          <li>Keine Garantie auf Auszahlungen; Auszahlungen finden nur statt, wenn eine Email mit Erfolg missbraucht wurde.</li>
           <li>Deine einzige Aufgabe ist es Emails einzugeben!</li>
         </ul>
       </div>
@@ -451,49 +451,36 @@
       }
     }
 
-    // ✅ TOS: pro User in localStorage
-    function tosKey(username) {
-      return "tosAccepted:" + String(username || "").toLowerCase();
-    }
-
+    // TOS: IMMER anzeigen
     function showTos() {
       tosBackdrop.classList.remove("hide");
       setTimeout(() => tosAcceptBtn.focus(), 50);
     }
-
     function hideTos() {
       tosBackdrop.classList.add("hide");
     }
 
-    async function ensureTosAccepted(username) {
-      const key = tosKey(username);
-      const accepted = localStorage.getItem(key) === "1";
-      if (accepted) return true;
-
+    async function ensureTosAccepted() {
       showTos();
 
       return await new Promise(resolve => {
         const accept = () => {
-          localStorage.setItem(key, "1");
           hideTos();
           cleanup();
           resolve(true);
         };
 
         const decline = async () => {
-  cleanup();
+          cleanup();
 
-  // ✅ ausloggen
-  await fetch("/api/logout", {
-    method: "GET",
-    credentials: "include",
-    cache: "no-store"
-  }).catch(() => {});
+          await fetch("/api/logout", {
+            credentials: "include",
+            cache: "no-store"
+          }).catch(() => {});
 
-  // ✅ zurück zum Login
-  location.href = "index.html?tos=declined";
-  resolve(false);
-};
+          location.href = "index.html?tos=declined";
+          resolve(false);
+        };
 
         function cleanup() {
           tosAcceptBtn.removeEventListener("click", accept);
@@ -532,8 +519,8 @@
       const me = await checkLogin();
       if (!me) return;
 
-      // ✅ Erst Nutzungsbedingungen akzeptieren, dann Dashboard freigeben
-      const ok = await ensureTosAccepted(me.username);
+      // Erst Nutzungsbedingungen akzeptieren, dann Dashboard freigeben
+      const ok = await ensureTosAccepted();
       if (!ok) return;
 
       await refreshCount();
