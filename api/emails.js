@@ -23,6 +23,12 @@ async function getUsernameFromToken(req) {
   }
 }
 
+function isValidEmail(s) {
+  if (typeof s !== "string") return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(s.trim());
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).send("Method not allowed");
 
@@ -31,15 +37,39 @@ export default async function handler(req, res) {
     if (!username) return res.status(401).send("Nicht eingeloggt.");
 
     const key = `emails:${username}`;
+
+    // hol dir z.B. die letzten 200
     const raw = await kv.lrange(key, 0, 199);
 
     const emails = [];
+
     for (const item of raw || []) {
-      if (typeof item !== "string") continue;
-      try {
-        const parsed = JSON.parse(item);
-        if (parsed && typeof parsed.email === "string") emails.push(parsed);
-      } catch {}
+      // 1) Falls KV schon Objekte zurückgibt
+      if (item && typeof item === "object") {
+        if (typeof item.email === "string" && isValidEmail(item.email)) {
+          emails.push({ email: item.email.trim(), ts: item.ts ?? null });
+        }
+        continue;
+      }
+
+      // 2) Falls KV Strings zurückgibt
+      if (typeof item === "string") {
+        // 2a) JSON-String?
+        try {
+          const parsed = JSON.parse(item);
+          if (parsed && typeof parsed.email === "string" && isValidEmail(parsed.email)) {
+            emails.push({ email: parsed.email.trim(), ts: parsed.ts ?? null });
+            continue;
+          }
+        } catch {
+          // ignore -> vielleicht Plain-String
+        }
+
+        // 2b) Plain Email-String (altes Format)
+        if (isValidEmail(item)) {
+          emails.push({ email: item.trim(), ts: null });
+        }
+      }
     }
 
     return res.status(200).json({
@@ -49,7 +79,8 @@ export default async function handler(req, res) {
         username,
         key,
         rawCount: (raw || []).length,
-        parsedCount: emails.length
+        parsedCount: emails.length,
+        sampleTypes: (raw || []).slice(0, 5).map(v => (v === null ? "null" : typeof v))
       }
     });
   } catch (err) {
