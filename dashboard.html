@@ -18,7 +18,6 @@
       color: #111;
     }
 
-    /* TOP BAR */
     .topbar {
       position: sticky;
       top: 0;
@@ -71,7 +70,6 @@
     .btn-logout { background: #e53935; }
     .btn:hover { opacity: 0.9; }
 
-    /* CENTER */
     .wrap {
       max-width: 1000px;
       margin: 0 auto;
@@ -122,6 +120,16 @@
       box-shadow: 0 0 0 4px rgba(30,136,229,0.15);
     }
 
+    /* ✅ Speed visual feedback (kurz grün/rot) */
+    .email-input.ok {
+      border-color: rgba(67,206,162,0.9);
+      box-shadow: 0 0 0 4px rgba(67,206,162,0.18);
+    }
+    .email-input.bad {
+      border-color: rgba(229,57,53,0.9);
+      box-shadow: 0 0 0 4px rgba(229,57,53,0.12);
+    }
+
     .send-btn {
       padding: 14px 18px;
       font-size: 15px;
@@ -151,8 +159,6 @@
 </head>
 
 <body>
-
-  <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-inner">
       <div class="who">
@@ -169,7 +175,6 @@
     </div>
   </div>
 
-  <!-- CENTER -->
   <div class="wrap">
     <div class="card">
       <div class="headline">EMAIL = GELD</div>
@@ -180,6 +185,7 @@
           class="email-input"
           type="email"
           placeholder="email@domain.de"
+          autocomplete="off"
           required
         >
         <button id="sendBtn" class="send-btn">Hinzufügen</button>
@@ -195,6 +201,8 @@
     const emailInput = document.getElementById("emailInput");
     const countPill = document.getElementById("countPill");
 
+    let inFlight = false;
+
     function setMsg(text, ok=false) {
       msg.className = "msg" + (ok ? " success" : "");
       msg.textContent = text || "";
@@ -202,6 +210,13 @@
 
     function emailValid(email) {
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function flashInput(state) {
+      // state: "ok" | "bad" | ""
+      emailInput.classList.remove("ok", "bad");
+      if (state) emailInput.classList.add(state);
+      if (state) setTimeout(() => emailInput.classList.remove(state), 450);
     }
 
     async function checkLogin() {
@@ -223,12 +238,24 @@
     }
 
     async function sendEmail() {
+      if (inFlight) return; // ✅ kein Doppelklick / Doppel-Enter
+
       const email = emailInput.value.trim().toLowerCase();
       setMsg("");
 
-      if (!email) return setMsg("Bitte eine Email eingeben.");
-      if (!emailValid(email)) return setMsg("Ungültige Email-Adresse.");
+      if (!email) {
+        flashInput("bad");
+        emailInput.focus();
+        return setMsg("Bitte eine Email eingeben.");
+      }
+      if (!emailValid(email)) {
+        flashInput("bad");
+        emailInput.focus();
+        emailInput.select(); // ✅ schneller überschreiben
+        return setMsg("Ungültige Email-Adresse.");
+      }
 
+      inFlight = true;
       sendBtn.disabled = true;
 
       try {
@@ -242,23 +269,42 @@
         const text = await res.text();
 
         if (!res.ok) {
+          flashInput("bad");
           setMsg(text || "Fehler beim Speichern.");
+          // ✅ Speed: Cursor bleibt im Feld & markiert zum Überschreiben
+          emailInput.focus();
+          emailInput.select();
           return;
         }
 
+        // ✅ Success Speed-Mode
+        flashInput("ok");
         setMsg("Gespeichert ✅", true);
         emailInput.value = "";
         await refreshCount();
+
+        // ✅ sofort wieder bereit
+        emailInput.focus();
       } catch {
+        flashInput("bad");
         setMsg("Server nicht erreichbar.");
+        emailInput.focus();
+        emailInput.select();
       } finally {
+        inFlight = false;
         sendBtn.disabled = false;
       }
     }
 
-    document.getElementById("sendBtn").addEventListener("click", sendEmail);
-    emailInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") sendEmail();
+    // Click
+    sendBtn.addEventListener("click", sendEmail);
+
+    // ✅ Enter = speichern (ohne Klick)
+    emailInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendEmail();
+      }
     });
 
     document.getElementById("myEmailsBtn").addEventListener("click", () => {
@@ -274,9 +320,8 @@
       const me = await checkLogin();
       if (!me) return;
       await refreshCount();
-      emailInput.focus();
+      emailInput.focus(); // ✅ sofort ready
     })();
   </script>
-
 </body>
 </html>

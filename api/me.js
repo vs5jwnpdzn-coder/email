@@ -8,19 +8,31 @@ function getCookie(req, name) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).json({ ok: false });
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false });
+  }
 
   const token = getCookie(req, "token");
-  if (!token) return res.status(401).json({ ok: false });
+
+  if (!token) {
+    return res.status(401).json({ ok: false });
+  }
 
   try {
     const secretValue = process.env.JWT_SECRET;
-    if (!secretValue) return res.status(500).json({ ok: false, error: "JWT_SECRET fehlt" });
+    if (!secretValue) {
+      return res.status(500).json({ ok: false, error: "JWT_SECRET fehlt" });
+    }
 
     const secret = new TextEncoder().encode(secretValue);
     const { payload } = await jwtVerify(token, secret);
 
-    return res.status(200).json({ ok: true, username: payload.username });
+    return res.status(200).json({
+      ok: true,
+      username: payload.username,
+      role: payload.role || "user"
+    });
+
   } catch {
     return res.status(401).json({ ok: false });
   }

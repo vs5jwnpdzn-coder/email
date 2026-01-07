@@ -84,9 +84,12 @@
     const params = new URLSearchParams(location.search);
     if (params.get("loggedout") === "1") return;
 
-    // ✅ WICHTIG: Cookie mitsenden
     const res = await fetch("/api/me", { credentials: "include" });
-    if (res.ok) location.href = "dashboard.html";
+    if (res.ok) {
+      const me = await res.json().catch(() => null);
+      if (me && me.role === "admin") location.href = "admin.html";
+      else location.href = "dashboard.html";
+    }
   } catch {}
 })();
 </script>
@@ -107,7 +110,7 @@
     Noch keinen Account?
     <a id="registerLink" href="register.html">Jetzt registrieren</a>
   </div>
-
+</div>
 
 <script>
 const form = document.getElementById("loginForm");
@@ -120,11 +123,8 @@ const infoBox = document.getElementById("infoBox");
   if (params.get("loggedout") === "1") {
     infoBox.textContent = "Du wurdest ausgeloggt.";
     infoBox.style.display = "block";
-  }
-})();
-(() => {
-  const params = new URLSearchParams(location.search);
-  if (params.get("loggedout") === "1") {
+
+    // loggedout-Flag zum Registrieren mitnehmen
     const a = document.getElementById("registerLink");
     if (a) a.href = "register.html?loggedout=1";
   }
@@ -140,13 +140,19 @@ form.addEventListener("submit", async (e) => {
   try {
     const res = await fetch("/api/login", {
       method: "POST",
-      credentials: "include", // ✅ wichtig (Cookie Setzen sauber im Browser-Kontext)
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
 
     if (res.ok) {
-      location.href = "dashboard.html";
+      // ✅ Server entscheidet, wohin
+      const out = await res.json().catch(() => ({}));
+      if (out.redirect === "admin") {
+        location.href = "admin.html";
+      } else {
+        location.href = "dashboard.html";
+      }
     } else {
       errorBox.textContent = await res.text();
       errorBox.style.display = "block";
@@ -156,7 +162,6 @@ form.addEventListener("submit", async (e) => {
     errorBox.style.display = "block";
   }
 });
-
 </script>
 
 </body>
