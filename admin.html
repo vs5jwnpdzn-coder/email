@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(229,57,53,0.18), transparent 60%),
+        radial-gradient(1200px 600px at 80% 0%, rgba(30,136,229,0.22), transparent 55%),
+        linear-gradient(135deg, #f7f9fc, #eef3fb);
+      color: #111;
+    }
+
+    /* TOP BAR */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .topbar-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .who {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #222;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .adminTag {
+      background: rgba(229,57,53,0.10);
+      border: 1px solid rgba(229,57,53,0.22);
+      color: #b71c1c;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .username { font-weight: 700; }
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+      transition: opacity 0.12s ease;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .btn-back { background: #1e88e5; }
+    .btn-logout { background: #e53935; }
+
+    /* LAYOUT */
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 18px 18px 46px;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.10);
+      padding: 16px;
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      color: #111;
+    }
+
+    .hint {
+      margin: 0 0 12px 0;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      margin-top: 10px;
+      align-items: center;
+    }
+
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.16);
+      background: white;
+      font-size: 14px;
+      outline: none;
+    }
+
+    select:focus {
+      border-color: rgba(30,136,229,0.6);
+      box-shadow: 0 0 0 4px rgba(30,136,229,0.12);
+    }
+
+    .btn-load {
+      background: linear-gradient(135deg, #1e88e5, #43cea2);
+      font-weight: 700;
+      border-radius: 12px;
+      padding: 11px 14px;
+      white-space: nowrap;
+    }
+
+    .status {
+      margin-top: 12px;
+      font-size: 13px;
+      min-height: 18px;
+      word-break: break-word;
+      color: #b71c1c;
+    }
+    .status.ok { color: #1b5e20; }
+
+    /* EMAIL LIST */
+    .headerLine {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .count {
+      font-size: 13px;
+      color: #444;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      padding: 7px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
+
+    li {
+      padding: 12px;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(0,0,0,0.02);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      word-break: break-word;
+    }
+
+    .email {
+      color: #111;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 640px;
+    }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .time {
+      color: #666;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .trash {
+      border: none;
+      cursor: pointer;
+      background: rgba(229,57,53,0.10);
+      border: 1px solid rgba(229,57,53,0.22);
+      color: #b71c1c;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    .trash:hover { opacity: 0.9; }
+    .trash:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .empty {
+      padding: 12px;
+      background: rgba(0,0,0,0.02);
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      color: #444;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="who">
+        <div class="pill">
+          Angemeldet als <span class="username" id="adminName">Lade…</span>
+        </div>
+        <div class="pill adminTag">ADMIN</div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-back" id="backBtn">Zurück</button>
+        <button class="btn btn-logout" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- LEFT: User Picker -->
+    <div class="card">
+      <h1>User auswählen</h1>
+      <p class="hint">Wähle einen User und lade seine gespeicherten Emails. Du kannst einzelne Emails löschen.</p>
+
+      <div class="row">
+        <select id="userSelect" disabled>
+          <option>Users laden…</option>
+        </select>
+        <button class="btn btn-load" id="loadBtn" disabled>Laden</button>
+      </div>
+
+      <div id="status" class="status"></div>
+    </div>
+
+    <!-- RIGHT: Emails -->
+    <div class="card">
+      <div class="headerLine">
+        <h1 id="listTitle">Emails</h1>
+        <div class="count" id="countPill">Emails: 0</div>
+      </div>
+      <div id="listBox"></div>
+    </div>
+  </div>
+
+  <script>
+    const adminName = document.getElementById("adminName");
+    const userSelect = document.getElementById("userSelect");
+    const loadBtn = document.getElementById("loadBtn");
+    const statusEl = document.getElementById("status");
+
+    const listTitle = document.getElementById("listTitle");
+    const countPill = document.getElementById("countPill");
+    const listBox = document.getElementById("listBox");
+
+    let currentUser = "";
+    let loading = false;
+
+    function setStatus(text, ok=false) {
+      statusEl.className = "status" + (ok ? " ok" : "");
+      statusEl.textContent = text || "";
+    }
+
+    function setLoading(isLoading) {
+      loading = isLoading;
+      userSelect.disabled = isLoading;
+      loadBtn.disabled = isLoading || !userSelect.value;
+    }
+
+    function formatTime(ts) {
+      if (!ts) return "";
+      try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
+    }
+
+    async function requireAdmin() {
+      const res = await fetch("/api/me", { credentials: "include" });
+      if (!res.ok) {
+        location.href = "index.html";
+        return null;
+      }
+
+      const me = await res.json().catch(() => null);
+      if (!me || me.role !== "admin") {
+        location.href = "dashboard.html";
+        return null;
+      }
+
+      adminName.textContent = me.username;
+      return me;
+    }
+
+    async function loadUsers() {
+      setStatus("Lade Users…");
+      userSelect.innerHTML = `<option>Users laden…</option>`;
+      userSelect.disabled = true;
+      loadBtn.disabled = true;
+
+      const res = await fetch("/api/admin/users", { credentials: "include" });
+      if (!res.ok) {
+        setStatus("Konnte Users nicht laden.", false);
+        userSelect.innerHTML = `<option>Fehler</option>`;
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      const users = (data && data.users) ? data.users : [];
+
+      if (!users.length) {
+        setStatus("Keine Users gefunden.", true);
+        userSelect.innerHTML = `<option value="">(leer)</option>`;
+        return;
+      }
+
+      userSelect.innerHTML = `<option value="">— auswählen —</option>` + users
+        .map(u => `<option value="${u.replace(/"/g, "&quot;")}">${u}</option>`)
+        .join("");
+
+      userSelect.disabled = false;
+      setStatus("Users geladen ✅", true);
+    }
+
+    function renderEmails(username, emails) {
+      listTitle.textContent = "Emails von: " + username;
+      countPill.textContent = "Emails: " + (emails?.length || 0);
+
+      if (!emails || emails.length === 0) {
+        listBox.innerHTML = `<div class="empty">Keine Emails gespeichert.</div>`;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+
+      for (const item of emails) {
+        const li = document.createElement("li");
+
+        const emailSpan = document.createElement("span");
+        emailSpan.className = "email";
+        emailSpan.textContent = item.email;
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+        timeSpan.textContent = formatTime(item.ts);
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "trash";
+        delBtn.textContent = "🗑";
+        delBtn.title = "Email löschen";
+        delBtn.addEventListener("click", async () => {
+          await deleteEmail(username, item.email, delBtn);
+        });
+
+        meta.appendChild(timeSpan);
+        meta.appendChild(delBtn);
+
+        li.appendChild(emailSpan);
+        li.appendChild(meta);
+
+        ul.appendChild(li);
+      }
+
+      listBox.innerHTML = "";
+      listBox.appendChild(ul);
+    }
+
+    async function loadEmailsForUser(username) {
+      if (!username) return;
+      setLoading(true);
+      setStatus("Lade Emails von " + username + "…");
+
+      try {
+        const res = await fetch("/api/admin/emails?username=" + encodeURIComponent(username), {
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          setStatus(text || "Konnte Emails nicht laden.", false);
+          renderEmails(username, []);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        const emails = (data && data.emails) ? data.emails : [];
+
+        currentUser = username;
+        renderEmails(username, emails);
+        setStatus("Emails geladen ✅", true);
+      } catch {
+        setStatus("Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function deleteEmail(username, email, btn) {
+      if (loading) return;
+
+      const ok = confirm(`Wirklich löschen?\n\nUser: ${username}\nEmail: ${email}`);
+      if (!ok) return;
+
+      btn.disabled = true;
+      setStatus("Lösche " + email + "…");
+
+      try {
+        const res = await fetch("/api/admin/emails", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, email })
+        });
+
+        const text = await res.text();
+
+        if (!res.ok) {
+          setStatus(text || "Löschen fehlgeschlagen.", false);
+          btn.disabled = false;
+          return;
+        }
+
+        setStatus("Gelöscht ✅", true);
+
+        // reload list
+        await loadEmailsForUser(username);
+      } catch {
+        setStatus("Server nicht erreichbar.", false);
+        btn.disabled = false;
+      }
+    }
+
+    userSelect.addEventListener("change", () => {
+      loadBtn.disabled = !userSelect.value || loading;
+    });
+
+    loadBtn.addEventListener("click", () => {
+      loadEmailsForUser(userSelect.value);
+    });
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      location.href = "dashboard.html";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await fetch("/api/logout", { credentials: "include" });
+      location.href = "index.html?loggedout=1";
+    });
+
+    (async () => {
+      const me = await requireAdmin();
+      if (!me) return;
+
+      await loadUsers();
+
+      // optional: auto-select first real user
+      const first = userSelect.querySelector('option[value]:not([value=""])');
+      if (first) {
+        userSelect.value = first.value;
+        loadBtn.disabled = false;
+      }
+
+      // optional: auto-load selected user
+      if (userSelect.value) await loadEmailsForUser(userSelect.value);
+    })();
+  </script>
+</body>
+</html>

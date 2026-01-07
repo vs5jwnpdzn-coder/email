@@ -5,17 +5,14 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from "jose";
 
 function setAuthCookie(res, token) {
-  // Wichtig für Vercel/Preview/cross-site: SameSite=None + Secure
   res.setHeader("Set-Cookie", [
     `token=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${60 * 60 * 24 * 7}`
   ]);
 }
 
 async function readJson(req) {
-  // Falls Vercel schon geparst hat
   if (req.body && typeof req.body === "object") return req.body;
 
-  // Robust: raw body lesen
   const chunks = [];
   for await (const chunk of req) chunks.push(chunk);
   const raw = Buffer.concat(chunks).toString("utf8").trim();
@@ -28,8 +25,6 @@ function normalizeUsername(u) {
 }
 
 function isValidUsername(u) {
-  // Muss zur UI passen:
-  // 3–20 Zeichen, nur a-z 0-9 _ -
   return /^[a-z0-9_-]{3,20}$/.test(u);
 }
 
@@ -54,16 +49,17 @@ export default async function handler(req, res) {
     }
 
     const key = `user:${u}`;
-
-    // ✅ Server-seitig finaler Schutz
     const exists = await kv.get(key);
     if (exists) return res.status(409).send("Benutzername ist bereits vergeben.");
 
     const hash = await bcrypt.hash(p, 12);
     await kv.set(key, { username: u, hash });
 
+    // ✅ NEU: User in Index aufnehmen (für Admin-Liste)
+    await kv.sadd("users", u);
+
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ username: u })
+    const token = await new SignJWT({ username: u, role: "user" })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("7d")
