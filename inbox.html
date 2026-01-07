@@ -150,7 +150,7 @@
     }
 
     async function checkLogin() {
-      const res = await fetch("/api/me", { credentials: "include" });
+      const res = await fetch("/api/me", { credentials: "include", cache: "no-store" });
       if (!res.ok) { location.href = "index.html"; return null; }
       const me = await res.json();
       document.getElementById("userName").textContent = me.username;
@@ -159,7 +159,12 @@
 
     async function loadInbox() {
       setStatus("Lade…");
-      const res = await fetch("/api/inbox", { credentials: "include" });
+
+      // 1) GET: Nachrichten holen
+      const res = await fetch("/api/inbox?t=" + Date.now(), {
+        credentials: "include",
+        cache: "no-store"
+      });
 
       if (!res.ok) {
         const t = await res.text().catch(() => "");
@@ -199,6 +204,14 @@
 
       listBox.innerHTML = "";
       listBox.appendChild(ul);
+
+      // 2) ✅ POST: alles als gelesen markieren (damit unreadCount = 0)
+      await fetch("/api/inbox", {
+        method: "POST",
+        credentials: "include",
+        cache: "no-store"
+      }).catch(() => {});
+
       setStatus("OK", true);
     }
 
