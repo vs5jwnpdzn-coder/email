@@ -1,3 +1,5 @@
+export const config = { runtime: "nodejs" };
+
 import { kv } from "@vercel/kv";
 import { jwtVerify } from "jose";
 
@@ -28,8 +30,6 @@ export default async function handler(req, res) {
     if (!username) return res.status(401).send("Nicht eingeloggt.");
 
     const key = `emails:${username}`;
-
-    // hole alle (max 200, weil wir ltrim auf 200 machen)
     const raw = await kv.lrange(key, 0, -1);
 
     const emails = (raw || []).map(v => {
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ ok: true, emails });
   } catch (err) {
-    return res.status(500).send("Serverfehler.");
+    console.error("EMAILS ERROR:", err);
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }
