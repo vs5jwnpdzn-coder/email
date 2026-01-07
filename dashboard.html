@@ -5,10 +5,7 @@
   <title>Dashboard</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
 
     body {
       height: 100vh;
@@ -17,6 +14,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      padding: 20px;
     }
 
     .card {
@@ -31,6 +29,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
       margin-bottom: 16px;
     }
 
@@ -50,8 +49,13 @@
       font-size: 14px;
     }
 
-    .btn:hover {
-      opacity: 0.9;
+    .btn:hover { opacity: 0.9; }
+
+    .hello {
+      margin: 0;
+      color: #444;
+      font-size: 16px;
+      line-height: 1.4;
     }
 
     .info {
@@ -62,6 +66,8 @@
       color: #444;
       font-size: 14px;
     }
+
+    .muted { color: #666; }
   </style>
 </head>
 
@@ -73,10 +79,11 @@
       <button class="btn" id="logoutBtn">Logout</button>
     </div>
 
-    <p id="hello">Lade…</p>
+    <p class="hello" id="hello">Lade…</p>
 
     <div class="info">
       <div><strong>Status:</strong> Eingeloggt</div>
+      <div class="muted" id="hint"></div>
     </div>
   </div>
 
@@ -91,9 +98,8 @@
         }
 
         const data = await res.json();
-        document.getElementById("hello").textContent =
-          "Hallo, " + data.username + " 🎉";
-
+        document.getElementById("hello").textContent = "Hallo, " + data.username + " 🎉";
+        document.getElementById("hint").textContent = "Du bist erfolgreich eingeloggt.";
       } catch (err) {
         // ❌ Serverproblem → zurück zum Login
         window.location.href = "index.html";
@@ -101,11 +107,13 @@
     }
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await fetch("/api/logout");
-      window.location.href = "index.html";
+      try {
+        await fetch("/api/logout");
+      } finally {
+        window.location.href = "index.html";
+      }
     });
 
-    // Beim Laden prüfen
     checkLogin();
   </script>
 

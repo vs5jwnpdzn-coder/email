@@ -5,10 +5,7 @@
   <title>Registrieren</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
 
     body {
       height: 100vh;
@@ -28,9 +25,7 @@
       text-align: center;
     }
 
-    h1 {
-      margin-bottom: 20px;
-    }
+    h1 { margin-bottom: 20px; }
 
     input {
       width: 100%;
@@ -68,70 +63,88 @@
     .link a {
       color: #2196F3;
       text-decoration: none;
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
-    <h1>Registrieren</h1>
+<!-- ✅ Auto-Redirect wenn eingeloggt -->
+<script>
+(async () => {
+  try {
+    const res = await fetch("/api/me");
+    if (res.ok) {
+      window.location.href = "dashboard.html";
+    }
+  } catch {}
+})();
+</script>
 
-    <div id="errorBox" class="error"></div>
+<div class="container">
+  <h1>Registrieren</h1>
 
-    <!-- ❗ KEIN action-Attribut -->
-    <form id="registerForm" novalidate>
-      <input type="text" name="username" placeholder="Benutzername" required>
-      <input type="password" name="password" placeholder="Passwort" required>
-      <input type="password" name="confirm" placeholder="Passwort wiederholen" required>
+  <div id="errorBox" class="error"></div>
 
-      <!-- type=submit ist OK, wir verhindern Default per JS -->
-      <button type="submit">Registrieren</button>
-    </form>
+  <form id="registerForm" novalidate>
+    <input type="text" name="username" placeholder="Benutzername" required>
+    <input type="password" name="password" placeholder="Passwort" required>
+    <input type="password" name="confirm" placeholder="Passwort wiederholen" required>
+    <button type="submit">Registrieren</button>
+  </form>
 
-    <div class="link">
-      Schon einen Account?
-      <a href="index.html">Jetzt anmelden</a>
-    </div>
+  <div class="link">
+    Schon einen Account?
+    <a href="index.html">Jetzt anmelden</a>
   </div>
 
-  <script>
-    const form = document.getElementById("registerForm");
-    const errorBox = document.getElementById("errorBox");
+  <div class="link">
+    <a id="logoutLink">Logout</a>
+  </div>
+</div>
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault(); // ⛔ verhindert Navigation & Downloads
-      errorBox.style.display = "none";
+<script>
+const form = document.getElementById("registerForm");
+const errorBox = document.getElementById("errorBox");
 
-      const data = Object.fromEntries(new FormData(form));
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBox.style.display = "none";
 
-      if (data.password !== data.confirm) {
-        errorBox.textContent = "Passwörter stimmen nicht überein.";
-        errorBox.style.display = "block";
-        return;
-      }
+  const data = Object.fromEntries(new FormData(form));
 
-      try {
-        const res = await fetch("/api/register", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+  if (data.password !== data.confirm) {
+    errorBox.textContent = "Passwörter stimmen nicht überein.";
+    errorBox.style.display = "block";
+    return;
+  }
 
-        if (res.ok) {
-          // ✅ Erfolgreich registriert → Dashboard
-          window.location.href = "dashboard.html";
-        } else {
-          const msg = await res.text();
-          errorBox.textContent = msg || "Registrierung fehlgeschlagen.";
-          errorBox.style.display = "block";
-        }
-      } catch (err) {
-        errorBox.textContent = "Server nicht erreichbar.";
-        errorBox.style.display = "block";
-      }
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
     });
-  </script>
+
+    if (res.ok) {
+      window.location.href = "dashboard.html";
+    } else {
+      const msg = await res.text();
+      errorBox.textContent = msg || "Registrierung fehlgeschlagen.";
+      errorBox.style.display = "block";
+    }
+  } catch {
+    errorBox.textContent = "Server nicht erreichbar.";
+    errorBox.style.display = "block";
+  }
+});
+
+document.getElementById("logoutLink").addEventListener("click", async () => {
+  await fetch("/api/logout");
+  location.reload();
+});
+</script>
 
 </body>
 </html>

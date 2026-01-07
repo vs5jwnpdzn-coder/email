@@ -5,10 +5,7 @@
   <title>Anmelden</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
 
     body {
       height: 100vh;
@@ -28,9 +25,7 @@
       text-align: center;
     }
 
-    h1 {
-      margin-bottom: 20px;
-    }
+    h1 { margin-bottom: 20px; }
 
     input {
       width: 100%;
@@ -68,62 +63,81 @@
     .link a {
       color: #2196F3;
       text-decoration: none;
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
-    <h1>Anmelden</h1>
+<!-- ✅ Auto-Redirect wenn eingeloggt -->
+<script>
+(async () => {
+  try {
+    const res = await fetch("/api/me");
+    if (res.ok) {
+      window.location.href = "dashboard.html";
+    }
+  } catch {}
+})();
+</script>
 
-    <div id="errorBox" class="error"></div>
+<div class="container">
+  <h1>Anmelden</h1>
 
-    <!-- ❗ KEIN action-Attribut -->
-    <form id="loginForm" novalidate>
-      <input type="text" name="username" placeholder="Benutzername" required>
-      <input type="password" name="password" placeholder="Passwort" required>
+  <div id="errorBox" class="error"></div>
 
-      <button type="submit">Anmelden</button>
-    </form>
+  <form id="loginForm" novalidate>
+    <input type="text" name="username" placeholder="Benutzername" required>
+    <input type="password" name="password" placeholder="Passwort" required>
+    <button type="submit">Anmelden</button>
+  </form>
 
-    <div class="link">
-      Noch keinen Account?
-      <a href="register.html">Jetzt registrieren</a>
-    </div>
+  <div class="link">
+    Noch keinen Account?
+    <a href="register.html">Jetzt registrieren</a>
   </div>
 
-  <script>
-    const form = document.getElementById("loginForm");
-    const errorBox = document.getElementById("errorBox");
+  <div class="link">
+    <a id="logoutLink">Logout</a>
+  </div>
+</div>
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault(); // ⛔ verhindert Navigation & Downloads
-      errorBox.style.display = "none";
+<script>
+const form = document.getElementById("loginForm");
+const errorBox = document.getElementById("errorBox");
 
-      const data = Object.fromEntries(new FormData(form));
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBox.style.display = "none";
 
-      try {
-        const res = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
+  const data = Object.fromEntries(new FormData(form));
 
-        if (res.ok) {
-          // ✅ Login erfolgreich → Dashboard
-          window.location.href = "dashboard.html";
-        } else {
-          const msg = await res.text();
-          errorBox.textContent = msg || "Benutzername oder Passwort falsch.";
-          errorBox.style.display = "block";
-        }
-      } catch (err) {
-        errorBox.textContent = "Server nicht erreichbar.";
-        errorBox.style.display = "block";
-      }
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
     });
-  </script>
+
+    if (res.ok) {
+      window.location.href = "dashboard.html";
+    } else {
+      const msg = await res.text();
+      errorBox.textContent = msg || "Login fehlgeschlagen.";
+      errorBox.style.display = "block";
+    }
+  } catch {
+    errorBox.textContent = "Server nicht erreichbar.";
+    errorBox.style.display = "block";
+  }
+});
+
+document.getElementById("logoutLink").addEventListener("click", async () => {
+  await fetch("/api/logout");
+  location.reload();
+});
+</script>
 
 </body>
 </html>
