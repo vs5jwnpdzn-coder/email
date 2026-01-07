@@ -67,14 +67,14 @@
 
 <body>
 
-<!-- ✅ Auto-Redirect, aber NICHT wenn ?loggedout=1 -->
+<!-- 🚫 Auto-Redirect nur wenn NICHT ausgeloggt -->
 <script>
 (async () => {
   try {
     const params = new URLSearchParams(location.search);
     if (params.get("loggedout") === "1") return;
 
-    // ✅ Cookie mitsenden
+    // Cookie mitsenden
     const res = await fetch("/api/me", { credentials: "include" });
     if (res.ok) location.href = "dashboard.html";
   } catch {}
@@ -95,7 +95,7 @@
 
   <div class="link">
     Schon einen Account?
-    <a href="index.html">Jetzt anmelden</a>
+    <a id="loginLink" href="index.html">Jetzt anmelden</a>
   </div>
 
   <div class="link">
@@ -106,6 +106,15 @@
 <script>
 const form = document.getElementById("registerForm");
 const errorBox = document.getElementById("errorBox");
+
+/* 🔁 loggedout-Flag beim Zurück-Navigieren mitnehmen */
+(() => {
+  const params = new URLSearchParams(location.search);
+  if (params.get("loggedout") === "1") {
+    const loginLink = document.getElementById("loginLink");
+    if (loginLink) loginLink.href = "index.html?loggedout=1";
+  }
+})();
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -122,7 +131,7 @@ form.addEventListener("submit", async (e) => {
   try {
     const res = await fetch("/api/register", {
       method: "POST",
-      credentials: "include", // ✅ wichtig
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
