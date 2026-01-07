@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Meine Emails</title>
+
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: #f4f4f4;
+      padding: 80px 20px 20px;
+    }
+
+    .top-left {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      font-size: 14px;
+      color: #333;
+      background: rgba(255,255,255,0.9);
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    .username { font-weight: bold; }
+
+    .top-right {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .btn {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: white;
+    }
+
+    .btn-back { background: #2196F3; }
+    .btn-logout { background: #e53935; }
+    .btn:hover { opacity: 0.9; }
+
+    .card {
+      width: 700px;
+      max-width: 95vw;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      padding: 22px;
+      margin: 0 auto;
+    }
+
+    h1 { margin: 0 0 10px 0; font-size: 22px; color: #222; }
+
+    .hint { margin: 0 0 18px 0; color: #666; font-size: 14px; }
+
+    .status {
+      padding: 12px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      color: #444;
+      font-size: 14px;
+      margin-bottom: 12px;
+      word-break: break-word;
+    }
+
+    ul { list-style: none; padding: 0; margin: 0; }
+
+    li {
+      padding: 12px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      background: #fafafa;
+      word-break: break-word;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .email { color: #222; }
+    .time { color: #666; font-size: 12px; white-space: nowrap; }
+
+    /* Debug badge */
+    .badge {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      background: #111;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      z-index: 9999;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="badge">myemails.html geladen ✅</div>
+
+  <div class="top-left">
+    Angemeldet als:
+    <span class="username" id="userName">Lade…</span>
+  </div>
+
+  <div class="top-right">
+    <button class="btn btn-back" id="backBtn">Zurück</button>
+    <button class="btn btn-logout" id="logoutBtn">Logout</button>
+  </div>
+
+  <div class="card">
+    <h1>Meine Emails</h1>
+    <p class="hint">Hier siehst du alle Emails, die du bisher gespeichert/gesendet hast.</p>
+
+    <div class="status" id="statusBox">Starte…</div>
+    <div id="listBox"></div>
+  </div>
+
+  <script>
+    const statusBox = document.getElementById("statusBox");
+    const listBox = document.getElementById("listBox");
+
+    function formatTime(ts) {
+      if (!ts) return "";
+      try { return new Date(ts).toLocaleString("de-DE"); }
+      catch { return ""; }
+    }
+
+    async function load() {
+      statusBox.textContent = "Prüfe Login…";
+
+      // 1) Login prüfen
+      const meRes = await fetch("/api/me");
+      if (!meRes.ok) {
+        statusBox.textContent = "Nicht eingeloggt → zurück zum Login.";
+        setTimeout(() => location.href = "index.html", 800);
+        return;
+      }
+
+      const me = await meRes.json();
+      document.getElementById("userName").textContent = me.username;
+
+      // 2) Emails laden
+      statusBox.textContent = "Lade Emails von /api/emails …";
+      const res = await fetch("/api/emails");
+      const text = await res.text();
+
+      if (!res.ok) {
+        statusBox.textContent = "Fehler /api/emails (" + res.status + "): " + text;
+        return;
+      }
+
+      let data;
+      try { data = JSON.parse(text); }
+      catch {
+        statusBox.textContent = "Antwort ist kein JSON: " + text;
+        return;
+      }
+
+      const emails = data.emails || [];
+
+      if (emails.length === 0) {
+        statusBox.textContent = "Noch keine Emails gespeichert.";
+        listBox.innerHTML = "";
+        return;
+      }
+
+      statusBox.textContent = "Gefundene Emails: " + emails.length;
+
+      const ul = document.createElement("ul");
+      for (const item of emails) {
+        const li = document.createElement("li");
+
+        const emailSpan = document.createElement("span");
+        emailSpan.className = "email";
+        emailSpan.textContent = item.email || "";
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+        timeSpan.textContent = formatTime(item.ts);
+
+        li.appendChild(emailSpan);
+        li.appendChild(timeSpan);
+        ul.appendChild(li);
+      }
+
+      listBox.innerHTML = "";
+      listBox.appendChild(ul);
+    }
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      location.href = "dashboard.html";
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try { await fetch("/api/logout"); }
+      finally { location.href = "index.html?loggedout=1"; }
+    });
+
+    load().catch(e => {
+      statusBox.textContent = "JS Fehler: " + (e?.message || e);
+    });
+  </script>
+
+</body>
+</html>
