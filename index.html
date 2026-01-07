@@ -86,8 +86,15 @@
     // ✅ WICHTIG: Wenn TOS abgelehnt wurde → KEIN Auto-Redirect
     if (params.get("tos") === "declined") return;
 
-    // wie gehabt:
+    // ✅ Wenn explizit ausgeloggt → KEIN Auto-Redirect
     if (params.get("loggedout") === "1") return;
+
+    // ✅ Zusätzlicher Schutz: wenn wir gerade aus dem Dashboard "decline/logout" kamen
+    // (wird nach 1x block wieder entfernt)
+    if (sessionStorage.getItem("justDeclinedTos") === "1") {
+      sessionStorage.removeItem("justDeclinedTos");
+      return;
+    }
 
     const res = await fetch("/api/me", { credentials: "include", cache: "no-store" });
     if (!res.ok) return;
@@ -145,6 +152,9 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorBox.style.display = "none";
   infoBox.style.display = "none";
+
+  // ✅ Beim manuellen Login darf Auto-Block nicht im Weg stehen
+  sessionStorage.removeItem("justDeclinedTos");
 
   const data = Object.fromEntries(new FormData(form));
 

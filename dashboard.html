@@ -282,12 +282,10 @@
       <div class="modal-body">
         <p style="margin-top:0"><b>Bitte akzeptiere die Nutzungsbedingungen, um fortzufahren.</b></p>
         <ul>
-          <li>Du erzählst keinem etwas über diese Seite!</li>
-          <li>Du gibst nur Emails ein, die dir oder deinen Engsten nicht gehören, da sie potenziell missbraucht werden.</li>
-          <li>Deine Eingabe ist bei uns geschützt und das Opfer wird niemals wissen, dass du diese Email weitergegeben hast.</li>
-          <li>Eingabe von Spam/-Fake-Emails führt zum Bann.</li>
-          <li>Keine Garantie auf Auszahlungen; Auszahlungen finden nur statt, wenn eine Email mit Erfolg missbraucht wurde.</li>
-          <li>Deine einzige Aufgabe ist es Emails einzugeben!</li>
+          <li>Du nutzt die Seite nur im Rahmen geltender Gesetze.</li>
+          <li>Du gibst nur Daten ein, für die du die nötigen Rechte/Einwilligungen hast.</li>
+          <li>Kein Spam, keine Fake-Daten, kein Missbrauch.</li>
+          <li>Wir können Accounts bei Verstößen sperren.</li>
         </ul>
       </div>
 
@@ -324,14 +322,7 @@
       <p class="subhero">Trag eine Email ein & sichere dir deine Chance.</p>
 
       <div class="composer">
-        <input
-          id="emailInput"
-          class="email-input"
-          type="email"
-          placeholder="email@domain.de"
-          autocomplete="off"
-          required
-        >
+        <input id="emailInput" class="email-input" type="email" placeholder="email@domain.de" autocomplete="off" required>
         <button id="sendBtn" class="send-btn">Hinzufügen</button>
       </div>
 
@@ -370,12 +361,11 @@
     }
 
     function setDashboardLocked(locked) {
-      // Alles sperren bis akzeptiert
       emailInput.disabled = locked;
       sendBtn.disabled = locked || inFlight;
       document.getElementById("myEmailsBtn").disabled = locked;
       document.getElementById("inboxBtn").disabled = locked;
-      document.getElementById("logoutBtn").disabled = false; // logout darf immer
+      document.getElementById("logoutBtn").disabled = false;
     }
 
     async function checkLogin() {
@@ -469,7 +459,6 @@
     }
 
     function ensureTosEveryLogin() {
-      // ✅ kommt bei JEDEM Login (kein localStorage mehr)
       showTos();
 
       return new Promise(resolve => {
@@ -483,15 +472,17 @@
         const decline = async () => {
           cleanup();
 
-          // ✅ ausloggen (POST ist sauberer)
+          // Flag setzen, damit index.html NICHT auto-redirectet
+          sessionStorage.setItem("justDeclinedTos", "1");
+
           await fetch("/api/logout", {
-            method: "POST",
+            method: "GET",
             credentials: "include",
             cache: "no-store"
           }).catch(() => {});
 
-          // ✅ zurück zum Login (replace verhindert Back/Loop)
-          window.location.replace("index.html?tos=declined");
+          // replace verhindert Back/Loop
+          window.location.replace("index.html?tos=declined&loggedout=1");
           resolve(false);
         };
 
@@ -528,15 +519,15 @@
     });
 
     document.getElementById("logoutBtn").onclick = async () => {
-      await fetch("/api/logout", { method: "POST", credentials: "include" }).catch(()=>{});
-      location.href = "index.html?loggedout=1";
+      sessionStorage.setItem("justDeclinedTos", "1"); // blockt auch Auto-Redirect
+      await fetch("/api/logout", { method: "GET", credentials: "include", cache: "no-store" }).catch(()=>{});
+      window.location.replace("index.html?loggedout=1");
     };
 
     (async () => {
       const me = await checkLogin();
       if (!me) return;
 
-      // ✅ Popup immer zeigen
       const ok = await ensureTosEveryLogin();
       if (!ok) return;
 
