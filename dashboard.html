@@ -170,6 +170,12 @@
 
     checkLogin();
   </script>
-
+<button
+  style="position:fixed;bottom:20px;right:20px;padding:10px 14px;border-radius:10px;border:none;background:#000;color:#fff;z-index:9999;"
+  onclick="fetch('/api/reset-emails',{method:'POST'})
+    .then(r=>r.text())
+    .then(t=>alert(t))">
+  RESET EMAILS
+</button>
 </body>
 </html>
