@@ -84,7 +84,8 @@
     const params = new URLSearchParams(location.search);
     if (params.get("loggedout") === "1") return;
 
-    const res = await fetch("/api/me");
+    // ✅ WICHTIG: Cookie mitsenden
+    const res = await fetch("/api/me", { credentials: "include" });
     if (res.ok) location.href = "dashboard.html";
   } catch {}
 })();
@@ -136,6 +137,7 @@ form.addEventListener("submit", async (e) => {
   try {
     const res = await fetch("/api/login", {
       method: "POST",
+      credentials: "include", // ✅ wichtig (Cookie Setzen sauber im Browser-Kontext)
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
@@ -154,8 +156,9 @@ form.addEventListener("submit", async (e) => {
 
 document.getElementById("logoutLink").addEventListener("click", async (e) => {
   e.preventDefault();
-  await fetch("/api/logout");
-  // ✅ NICHT reload; sondern mit flag, damit kein Auto-Redirect passiert
+  // ✅ Cookie wirklich löschen
+  await fetch("/api/logout", { credentials: "include" });
+
   location.href = "index.html?loggedout=1";
 });
 </script>

@@ -74,7 +74,8 @@
     const params = new URLSearchParams(location.search);
     if (params.get("loggedout") === "1") return;
 
-    const res = await fetch("/api/me");
+    // ✅ Cookie mitsenden
+    const res = await fetch("/api/me", { credentials: "include" });
     if (res.ok) location.href = "dashboard.html";
   } catch {}
 })();
@@ -121,6 +122,7 @@ form.addEventListener("submit", async (e) => {
   try {
     const res = await fetch("/api/register", {
       method: "POST",
+      credentials: "include", // ✅ wichtig
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
@@ -139,7 +141,7 @@ form.addEventListener("submit", async (e) => {
 
 document.getElementById("logoutLink").addEventListener("click", async (e) => {
   e.preventDefault();
-  await fetch("/api/logout");
+  await fetch("/api/logout", { credentials: "include" });
   location.href = "index.html?loggedout=1";
 });
 </script>
