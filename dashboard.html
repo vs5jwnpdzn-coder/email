@@ -5,7 +5,10 @@
   <title>Dashboard</title>
 
   <style>
-    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
 
     body {
       height: 100vh;
@@ -14,62 +17,41 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
     }
 
-    .card {
-      width: 700px;
-      max-width: 95vw;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
-      padding: 18px;
-    }
+    /* ===== FIXED TOP ELEMENTS ===== */
 
-    /* Top bar */
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .who {
+    .top-left {
+      position: fixed;
+      top: 16px;
+      left: 16px;
       font-size: 14px;
       color: #333;
-      white-space: nowrap;
+      background: rgba(255,255,255,0.9);
+      padding: 8px 12px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
     .username {
-      font-weight: 700;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 220px;
-      display: inline-block;
-      vertical-align: bottom;
+      font-weight: bold;
     }
 
-    .right {
+    .top-right {
+      position: fixed;
+      top: 16px;
+      right: 16px;
       display: flex;
-      align-items: center;
       gap: 10px;
     }
 
     .btn {
-      padding: 10px 12px;
+      padding: 10px 14px;
       border-radius: 8px;
       border: none;
       cursor: pointer;
-      color: white;
       font-size: 14px;
+      color: white;
     }
 
     .btn-mails { background: #2196F3; }
@@ -77,33 +59,38 @@
 
     .btn:hover { opacity: 0.9; }
 
-    /* Center content */
-    .center {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 10px 30px;
-      gap: 12px;
+    /* ===== CENTER CARD ===== */
+
+    .card {
+      width: 420px;
+      max-width: 90vw;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      padding: 30px;
+      text-align: center;
     }
 
     .email-input {
-      width: 420px;
-      max-width: 100%;
+      width: 100%;
       padding: 12px;
       font-size: 14px;
       border: 1px solid #ddd;
       border-radius: 10px;
       outline: none;
+      margin-bottom: 12px;
     }
 
-    .email-input:focus {
-      border-color: #999;
+    .email-input:invalid {
+      border-color: #e53935;
+    }
+
+    .email-input:valid {
+      border-color: #4CAF50;
     }
 
     .send-btn {
-      width: 420px;
-      max-width: 100%;
+      width: 100%;
       padding: 12px;
       font-size: 15px;
       border-radius: 10px;
@@ -116,43 +103,48 @@
     .send-btn:hover { opacity: 0.92; }
 
     .msg {
-      margin-top: 8px;
+      margin-top: 12px;
       font-size: 14px;
-      color: #444;
-      text-align: center;
+      color: #e53935;
+    }
+
+    .msg.success {
+      color: #4CAF50;
     }
   </style>
 </head>
 
 <body>
 
+  <!-- 🔝 OBEN LINKS -->
+  <div class="top-left">
+    Angemeldet als:
+    <span class="username" id="userName">Lade…</span>
+  </div>
+
+  <!-- 🔝 OBEN RECHTS -->
+  <div class="top-right">
+    <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
+    <button class="btn btn-logout" id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- 🟢 MITTE -->
   <div class="card">
-    <!-- Top bar -->
-    <div class="topbar">
-      <!-- oben links: angemeldet als -->
-      <div class="left">
-        <div class="who">
-          Angemeldet als:
-          <span class="username" id="userName">Lade…</span>
-        </div>
-      </div>
+    <input
+      class="email-input"
+      id="emailInput"
+      type="email"
+      placeholder="Email eingeben"
+      required
+    >
 
-      <!-- oben rechts: meine emails + logout -->
-      <div class="right">
-        <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
-        <button class="btn btn-logout" id="logoutBtn">Logout</button>
-      </div>
-    </div>
+    <button class="send-btn" id="sendBtn">Senden</button>
 
-    <!-- Mitte: input + senden -->
-    <div class="center">
-      <input class="email-input" id="emailInput" type="email" placeholder="Email eingeben">
-      <button class="send-btn" id="sendBtn">Senden</button>
-      <div class="msg" id="msg"></div>
-    </div>
+    <div class="msg" id="msg"></div>
   </div>
 
   <script>
+    // 🔐 Login prüfen
     async function checkLogin() {
       try {
         const res = await fetch("/api/me");
@@ -167,6 +159,7 @@
       }
     }
 
+    // 🚪 Logout
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       try {
         await fetch("/api/logout");
@@ -176,21 +169,34 @@
     });
 
     document.getElementById("myEmailsBtn").addEventListener("click", () => {
-      // Platzhalter: hier später auf "meine-emails.html" oder ähnliches weiterleiten
-      alert("Hier kommt später deine Seite: 'Meine Emails'");
+      alert("Hier kommt später deine Seite: Meine Emails");
     });
 
+    // 📧 Email validieren + senden
     document.getElementById("sendBtn").addEventListener("click", () => {
-      const email = document.getElementById("emailInput").value.trim();
+      const input = document.getElementById("emailInput");
       const msg = document.getElementById("msg");
+      const email = input.value.trim();
+
+      // Regex für sauberes Email-Format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      msg.className = "msg";
 
       if (!email) {
         msg.textContent = "Bitte eine Email eingeben.";
         return;
       }
 
-      // Platzhalter: hier später API call zum Senden
-      msg.textContent = "Email wurde (Demo) gesendet an: " + email;
+      if (!emailRegex.test(email)) {
+        msg.textContent = "Bitte eine gültige Email-Adresse eingeben.";
+        return;
+      }
+
+      // ✅ Erfolgsfall (Demo)
+      msg.textContent = "Email (Demo) gesendet an: " + email;
+      msg.classList.add("success");
+      input.value = "";
     });
 
     checkLogin();
