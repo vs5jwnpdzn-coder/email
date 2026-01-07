@@ -2,6 +2,7 @@ export const config = { runtime: "nodejs" };
 
 import { kv } from "@vercel/kv";
 import { jwtVerify } from "jose";
+import { json } from "micro";   // 🔴 DAS ist der Fix
 
 function getCookie(req, name) {
   const cookie = req.headers.cookie || "";
@@ -30,11 +31,11 @@ export default async function handler(req, res) {
       return res.status(401).send("Nicht eingeloggt");
     }
 
-    // ✅ EINZIG sichere Methode
-    const body = req.body;
+    // ✅ EINZIG STABILER BODY-PARSER AUF VERCEL
+    const body = await json(req);
 
-    if (!body || typeof body.email !== "string") {
-      return res.status(400).send("Email fehlt oder ist ungültig");
+    if (typeof body.email !== "string") {
+      return res.status(400).send("Email fehlt");
     }
 
     const email = body.email.trim();
@@ -46,10 +47,10 @@ export default async function handler(req, res) {
 
     const key = `emails:${username}`;
 
-    await kv.lpush(key, JSON.stringify({
-      email,
-      ts: Date.now()
-    }));
+    await kv.lpush(
+      key,
+      JSON.stringify({ email, ts: Date.now() })
+    );
 
     return res.status(200).json({ ok: true });
 
