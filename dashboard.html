@@ -291,7 +291,7 @@
           <li>Du gibst nur Emails ein, die dir oder deinen Engsten nicht gehören, da sie potenziell missbraucht werden.</li>
           <li>Deine Eingabe ist bei uns geschützt und das Opfer wird niemals wissen, dass du diese Email weitergegeben hast.</li>
           <li>Eingabe von Spam/-Fake-Emails führt zum Bann.</li>
-          <li>Keine Garantie auf Auszahlungen; Auszahlungen finden nur statt, wenn eine Email mit Erfolg missbraucht wurde -> je mehr Emails du abschickst desto wahrscheinlicher ist der Missbrauch</li>
+          <li>Keine Garantie auf Auszahlungen; Auszahlungen finden nur statt, wenn eine Email mit Erfolg missbraucht wurde -> je mehr Emails du abschickst desto wahrscheinlicher ist der Missbrauch.</li>
           <li>Deine einzige Aufgabe ist es Emails einzugeben!</li>
         </ul>
       </div>
@@ -481,11 +481,19 @@
         };
 
         const decline = async () => {
-          cleanup();
-          await fetch("/api/logout", { credentials: "include" }).catch(() => {});
-          location.href = "index.html?tos=declined";
-          resolve(false);
-        };
+  cleanup();
+
+  // ✅ ausloggen
+  await fetch("/api/logout", {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store"
+  }).catch(() => {});
+
+  // ✅ zurück zum Login
+  location.href = "index.html?tos=declined";
+  resolve(false);
+};
 
         function cleanup() {
           tosAcceptBtn.removeEventListener("click", accept);
