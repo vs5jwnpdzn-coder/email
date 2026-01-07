@@ -19,14 +19,11 @@ async function getUsernameFromToken(req) {
   return String(payload.username);
 }
 
-// ✅ HIER IST DER FIX
 async function getBody(req) {
-  // Vercel hat Body oft schon geparst
-  if (req.body && typeof req.body === "object") {
-    return req.body;
-  }
+  // Wenn Vercel schon geparst hat
+  if (req.body && typeof req.body === "object") return req.body;
 
-  // Fallback: raw body lesen
+  // Raw lesen
   let raw = "";
   await new Promise((resolve, reject) => {
     req.on("data", chunk => (raw += chunk));
@@ -39,46 +36,34 @@ async function getBody(req) {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed");
-  }
+  if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
   try {
     const username = await getUsernameFromToken(req);
-    if (!username) {
-      return res.status(401).send("Nicht eingeloggt.");
-    }
+    if (!username) return res.status(401).send("Nicht eingeloggt.");
 
     const body = await getBody(req);
-    const email = String(body.email || "").trim();
+
+    // ✅ NUR String akzeptieren (sonst kommt [object Object])
+    if (typeof body.email !== "string") {
+      return res.status(400).send("Ungültige Email (kein Text).");
+    }
+
+    const email = body.email.trim();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      return res.status(400).send("Bitte eine Email eingeben.");
-    }
     if (!emailRegex.test(email)) {
       return res.status(400).send("Ungültige Email.");
     }
 
     const key = `emails:${username}`;
 
-    // ✅ sauber speichern
-    await kv.lpush(
-      key,
-      JSON.stringify({
-        email,
-        ts: Date.now()
-      })
-    );
-
+    await kv.lpush(key, JSON.stringify({ email, ts: Date.now() }));
     await kv.ltrim(key, 0, 199);
 
     return res.status(200).json({ ok: true });
-
   } catch (err) {
     console.error("SEND ERROR:", err);
-    return res
-      .status(500)
-      .send('Serverfehler: ' + err.message);
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }

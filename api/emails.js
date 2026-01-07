@@ -1,4 +1,3 @@
-
 export const config = { runtime: "nodejs" };
 
 import { kv } from "@vercel/kv";
@@ -15,12 +14,9 @@ async function getUsernameFromToken(req) {
   const token = getCookie(req, "token");
   if (!token) return null;
 
-  const secretValue = process.env.JWT_SECRET;
-  if (!secretValue) throw new Error("JWT_SECRET fehlt");
-
-  const secret = new TextEncoder().encode(secretValue);
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const { payload } = await jwtVerify(token, secret);
-  return payload?.username ? String(payload.username) : null;
+  return String(payload.username);
 }
 
 export default async function handler(req, res) {
@@ -33,15 +29,23 @@ export default async function handler(req, res) {
     const key = `emails:${username}`;
     const raw = await kv.lrange(key, 0, -1);
 
-    const emails = (raw || []).map(v => {
-      try { return JSON.parse(v); } catch { return { email: String(v) }; }
-    });
+    const emails = [];
+    for (const item of raw || []) {
+      if (typeof item !== "string") continue;
+      try {
+        const parsed = JSON.parse(item);
+        // ✅ nur gültige Einträge zurückgeben
+        if (parsed && typeof parsed.email === "string") {
+          emails.push(parsed);
+        }
+      } catch {
+        // kaputt -> ignorieren
+      }
+    }
 
     return res.status(200).json({ ok: true, emails });
   } catch (err) {
     console.error("EMAILS ERROR:", err);
-    return res
-      .status(500)
-      .send("Serverfehler (emails): " + (err?.message || String(err)));
+    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
   }
 }
