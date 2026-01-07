@@ -3,112 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <title>Meine Emails</title>
-
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
-
-    body {
-      min-height: 100vh;
-      margin: 0;
-      background: #f4f4f4;
-      padding: 80px 20px 20px;
-    }
-
-    .top-left {
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      font-size: 14px;
-      color: #333;
-      background: rgba(255,255,255,0.95);
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      z-index: 10;
-    }
-
-    .top-right {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      display: flex;
-      gap: 10px;
-      z-index: 10;
-    }
-
-    .username { font-weight: bold; }
-
-    .btn {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-      color: white;
-    }
-
-    .btn-back { background: #2196F3; }
-    .btn-logout { background: #e53935; }
-    .btn:hover { opacity: 0.9; }
-
-    .card {
-      width: 700px;
-      max-width: 95vw;
-      background: white;
-      border-radius: 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-      padding: 22px;
-      margin: 0 auto;
-    }
-
-    h1 { margin: 0 0 10px 0; font-size: 22px; color: #222; }
-    .hint { margin: 0 0 18px 0; color: #666; font-size: 14px; }
-
-    .status {
-      padding: 12px;
-      background: #fafafa;
-      border: 1px solid #eee;
-      border-radius: 10px;
-      color: #111;
-      font-size: 14px;
-      margin-bottom: 12px;
-      word-break: break-word;
-      white-space: pre-wrap;
-    }
-
-    ul { list-style: none; padding: 0; margin: 0; }
-
-    li {
-      padding: 12px;
-      border: 1px solid #eee;
-      border-radius: 10px;
-      margin-bottom: 10px;
-      background: #fafafa;
-      word-break: break-word;
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .email { color: #222; }
-    .time { color: #666; font-size: 12px; white-space: nowrap; }
-
-    .badge {
-      position: fixed;
-      bottom: 12px;
-      left: 12px;
-      background: #111;
-      color: #fff;
-      padding: 6px 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      z-index: 9999;
-      opacity: 0.92;
-    }
+    body { min-height: 100vh; margin: 0; background: #f4f4f4; padding: 80px 20px 20px; }
+    .top-left{position:fixed;top:16px;left:16px;font-size:14px;color:#333;background:rgba(255,255,255,0.95);padding:8px 12px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:10;}
+    .top-right{position:fixed;top:16px;right:16px;display:flex;gap:10px;z-index:10;}
+    .username{font-weight:bold;}
+    .btn{padding:10px 14px;border-radius:8px;border:none;cursor:pointer;font-size:14px;color:white;}
+    .btn-back{background:#2196F3;}
+    .btn-logout{background:#e53935;}
+    .btn:hover{opacity:0.9;}
+    .card{width:700px;max-width:95vw;background:white;border-radius:14px;box-shadow:0 10px 25px rgba(0,0,0,0.15);padding:22px;margin:0 auto;}
+    h1{margin:0 0 10px 0;font-size:22px;color:#222;}
+    .hint{margin:0 0 18px 0;color:#666;font-size:14px;}
+    .status{padding:12px;background:#fafafa;border:1px solid #eee;border-radius:10px;color:#111;font-size:14px;margin-bottom:12px;word-break:break-word;white-space:pre-wrap;}
+    ul{list-style:none;padding:0;margin:0;}
+    li{padding:12px;border:1px solid #eee;border-radius:10px;margin-bottom:10px;background:#fafafa;word-break:break-word;display:flex;justify-content:space-between;gap:10px;align-items:center;}
+    .email{color:#222;}
+    .time{color:#666;font-size:12px;white-space:nowrap;}
+    .badge{position:fixed;bottom:12px;left:12px;background:#111;color:#fff;padding:6px 10px;border-radius:10px;font-size:12px;z-index:9999;opacity:0.92;}
   </style>
 </head>
-
 <body>
   <div class="badge">myemails.html ✅ (Debug aktiv)</div>
 
@@ -124,7 +39,7 @@
 
   <div class="card">
     <h1>Meine Emails</h1>
-    <p class="hint">Diese Seite zeigt immer Debug-Infos (damit sie nie „leer“ wirkt).</p>
+    <p class="hint">Hier siehst du alle gespeicherten Emails deines Accounts.</p>
 
     <div class="status" id="statusBox">Start…</div>
     <div id="listBox"></div>
@@ -142,8 +57,7 @@
     async function load() {
       statusBox.textContent = "1) Seite geladen ✅\n2) Prüfe /api/me …";
 
-      // /api/me
-      const meRes = await fetch("/api/me");
+      const meRes = await fetch("/api/me", { credentials: "include" });
       const meText = await meRes.text();
       statusBox.textContent += "\n/api/me Status: " + meRes.status + "\n/api/me Body: " + meText;
 
@@ -161,11 +75,8 @@
 
       document.getElementById("userName").textContent = me.username;
 
-      // /api/emails
       statusBox.textContent += "\n\n3) Lade /api/emails …";
-      const res = await fetch("/api/emails", {
-  credentials: "include"   // ⭐ wichtig
-});
+      const res = await fetch("/api/emails", { credentials: "include" });
       const text = await res.text();
       statusBox.textContent += "\n/api/emails Status: " + res.status + "\n/api/emails Body: " + text;
 
@@ -178,7 +89,6 @@
       }
 
       const emails = data.emails || [];
-
       if (emails.length === 0) {
         statusBox.textContent += "\n\nErgebnis: 0 Emails gespeichert.";
         listBox.innerHTML = "";
@@ -213,7 +123,7 @@
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try { await fetch("/api/logout"); }
+      try { await fetch("/api/logout", { credentials: "include" }); }
       finally { location.href = "index.html?loggedout=1"; }
     });
 

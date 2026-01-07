@@ -1,6 +1,5 @@
 import { jwtVerify } from "jose";
 
-// Cookie aus dem Request lesen
 function getCookie(req, name) {
   const cookie = req.headers.cookie || "";
   const parts = cookie.split(";").map(p => p.trim());
@@ -9,9 +8,11 @@ function getCookie(req, name) {
 }
 
 export default async function handler(req, res) {
-  const token = getCookie(req, "token");
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false });
+  }
 
-  // ❌ Nicht eingeloggt
+  const token = getCookie(req, "token");
   if (!token) {
     return res.status(401).json({ ok: false });
   }
@@ -25,14 +26,8 @@ export default async function handler(req, res) {
     const secret = new TextEncoder().encode(secretValue);
     const { payload } = await jwtVerify(token, secret);
 
-    // ✅ Eingeloggt
-    return res.status(200).json({
-      ok: true,
-      username: payload.username
-    });
-
-  } catch (err) {
-    // ❌ Token ungültig / abgelaufen
+    return res.status(200).json({ ok: true, username: payload.username });
+  } catch {
     return res.status(401).json({ ok: false });
   }
 }

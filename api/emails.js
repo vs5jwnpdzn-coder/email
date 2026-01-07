@@ -14,9 +14,13 @@ async function getUsernameFromToken(req) {
   const token = getCookie(req, "token");
   if (!token) return null;
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-  const { payload } = await jwtVerify(token, secret);
-  return String(payload.username);
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return String(payload.username);
+  } catch {
+    return null;
+  }
 }
 
 export default async function handler(req, res) {
@@ -26,26 +30,20 @@ export default async function handler(req, res) {
     const username = await getUsernameFromToken(req);
     if (!username) return res.status(401).send("Nicht eingeloggt.");
 
-    const key = `emails:${username}`;
-    const raw = await kv.lrange(key, 0, -1);
+    const raw = await kv.lrange(`emails:${username}`, 0, 199);
 
     const emails = [];
     for (const item of raw || []) {
       if (typeof item !== "string") continue;
       try {
         const parsed = JSON.parse(item);
-        // ✅ nur gültige Einträge zurückgeben
-        if (parsed && typeof parsed.email === "string") {
-          emails.push(parsed);
-        }
-      } catch {
-        // kaputt -> ignorieren
-      }
+        if (parsed && typeof parsed.email === "string") emails.push(parsed);
+      } catch {}
     }
 
     return res.status(200).json({ ok: true, emails });
   } catch (err) {
     console.error("EMAILS ERROR:", err);
-    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
+    return res.status(500).send("Serverfehler");
   }
 }
