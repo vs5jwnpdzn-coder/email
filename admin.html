@@ -28,13 +28,14 @@
     }
 
     .topbar-inner {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 14px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      flex-wrap: wrap;
     }
 
     .who {
@@ -81,11 +82,11 @@
     .btn-logout { background: #e53935; }
 
     .wrap {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       padding: 18px 18px 46px;
       display: grid;
-      grid-template-columns: 420px 1fr;
+      grid-template-columns: 460px 1fr;
       gap: 16px;
       align-items: start;
     }
@@ -102,24 +103,38 @@
       padding: 16px;
     }
 
-    h1 {
-      margin: 0 0 10px 0;
-      font-size: 18px;
-      color: #111;
-    }
+    h1 { margin: 0 0 10px 0; font-size: 18px; color: #111; }
+    .hint { margin: 0 0 12px 0; color: #666; font-size: 13px; line-height: 1.45; }
 
-    .hint {
-      margin: 0 0 12px 0;
-      color: #666;
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tab {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(0,0,0,0.03);
+      cursor: pointer;
       font-size: 13px;
-      line-height: 1.45;
+    }
+    .tab.active {
+      background: rgba(30,136,229,0.12);
+      border-color: rgba(30,136,229,0.25);
+      font-weight: 800;
     }
 
-    .controls {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 10px;
+    .controls { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+
+    input[type="text"]{
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.16);
+      background: white;
+      font-size: 14px;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: rgba(30,136,229,0.6);
+      box-shadow: 0 0 0 4px rgba(30,136,229,0.12);
     }
 
     select {
@@ -132,40 +147,13 @@
       outline: none;
     }
 
-    select:focus {
-      border-color: rgba(30,136,229,0.6);
-      box-shadow: 0 0 0 4px rgba(30,136,229,0.12);
-    }
+    .btnGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-load { background: linear-gradient(135deg, #1e88e5, #43cea2); font-weight: 800; border-radius: 12px; padding: 11px 14px; }
+    .btn-clear { background: linear-gradient(135deg, #ff9800, #f57c00); font-weight: 800; border-radius: 12px; padding: 11px 14px; }
+    .btn-rename { background: linear-gradient(135deg, #7e57c2, #5e35b1); font-weight: 800; border-radius: 12px; padding: 11px 14px; }
+    .btn-delete { background: linear-gradient(135deg, #e53935, #b71c1c); font-weight: 900; border-radius: 12px; padding: 11px 14px; }
 
-    .btnRow {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .btn-load {
-      background: linear-gradient(135deg, #1e88e5, #43cea2);
-      font-weight: 700;
-      border-radius: 12px;
-      padding: 11px 14px;
-      white-space: nowrap;
-    }
-
-    .btn-deleteUser {
-      background: linear-gradient(135deg, #e53935, #b71c1c);
-      font-weight: 800;
-      border-radius: 12px;
-      padding: 11px 14px;
-      white-space: nowrap;
-    }
-
-    .status {
-      margin-top: 12px;
-      font-size: 13px;
-      min-height: 18px;
-      word-break: break-word;
-      color: #b71c1c;
-    }
+    .status { margin-top: 12px; font-size: 13px; min-height: 18px; word-break: break-word; color: #b71c1c; }
     .status.ok { color: #1b5e20; }
 
     .headerLine {
@@ -202,39 +190,12 @@
       word-break: break-word;
     }
 
-    .email {
-      color: #111;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 640px;
-    }
+    .left { min-width: 0; }
+    .email { color: #111; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 620px; font-weight: 700; }
+    .sub { color: #666; font-size: 12px; margin-top: 4px; }
 
-    .meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-
-    .time {
-      color: #666;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
-    .trash {
-      border: none;
-      cursor: pointer;
-      background: rgba(229,57,53,0.10);
-      border: 1px solid rgba(229,57,53,0.22);
-      color: #b71c1c;
-      border-radius: 10px;
-      padding: 8px 10px;
-      font-size: 13px;
-    }
-    .trash:hover { opacity: 0.9; }
-    .trash:disabled { opacity: 0.55; cursor: not-allowed; }
+    .meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .time { color: #666; font-size: 12px; white-space: nowrap; }
 
     .empty {
       padding: 12px;
@@ -244,6 +205,8 @@
       color: #444;
       font-size: 13px;
     }
+
+    .hide { display: none; }
   </style>
 </head>
 
@@ -251,9 +214,7 @@
   <div class="topbar">
     <div class="topbar-inner">
       <div class="who">
-        <div class="pill">
-          Angemeldet als <span class="username" id="adminName">Lade…</span>
-        </div>
+        <div class="pill">Angemeldet als <span class="username" id="adminName">Lade…</span></div>
         <div class="pill adminTag">ADMIN</div>
       </div>
 
@@ -267,21 +228,44 @@
   <div class="wrap">
     <!-- LEFT -->
     <div class="card">
-      <h1>User auswählen</h1>
-      <p class="hint">User auswählen → Emails laden oder User komplett löschen.</p>
-
-      <div class="controls">
-        <select id="userSelect" disabled>
-          <option>Users laden…</option>
-        </select>
-
-        <div class="btnRow">
-          <button class="btn btn-load" id="loadBtn" disabled>Laden</button>
-          <button class="btn btn-deleteUser" id="deleteUserBtn" disabled>User löschen</button>
-        </div>
+      <div class="tabs">
+        <div class="tab active" id="tabUsers">User Verwaltung</div>
+        <div class="tab" id="tabAll">Alle Emails</div>
       </div>
 
-      <div id="status" class="status"></div>
+      <!-- USERS -->
+      <div id="usersPanel">
+        <h1>User Verwaltung</h1>
+        <p class="hint">Suche → User auswählen → Laden / Emails löschen / Umbenennen / User löschen.</p>
+
+        <div class="controls">
+          <input id="searchInput" type="text" placeholder="User suchen…" autocomplete="off" />
+          <select id="userSelect" disabled>
+            <option>Users laden…</option>
+          </select>
+
+          <div class="btnGrid">
+            <button class="btn btn-load" id="loadBtn" disabled>Laden</button>
+            <button class="btn btn-clear" id="clearBtn" disabled>Emails löschen</button>
+            <button class="btn btn-rename" id="renameBtn" disabled>Umbenennen</button>
+            <button class="btn btn-delete" id="deleteBtn" disabled>User löschen</button>
+          </div>
+        </div>
+
+        <div id="statusUsers" class="status"></div>
+      </div>
+
+      <!-- ALL EMAILS -->
+      <div id="allPanel" class="hide">
+        <h1>Alle Emails</h1>
+        <p class="hint">Hier siehst du alle gespeicherten Emails zusammen – jeweils mit Username.</p>
+
+        <div class="controls">
+          <button class="btn btn-load" id="loadAllBtn">Alle laden</button>
+        </div>
+
+        <div id="statusAll" class="status"></div>
+      </div>
     </div>
 
     <!-- RIGHT -->
@@ -296,28 +280,53 @@
 
   <script>
     const adminName = document.getElementById("adminName");
-    const userSelect = document.getElementById("userSelect");
-    const loadBtn = document.getElementById("loadBtn");
-    const deleteUserBtn = document.getElementById("deleteUserBtn");
-    const statusEl = document.getElementById("status");
 
+    // tabs
+    const tabUsers = document.getElementById("tabUsers");
+    const tabAll = document.getElementById("tabAll");
+    const usersPanel = document.getElementById("usersPanel");
+    const allPanel = document.getElementById("allPanel");
+
+    // users controls
+    const userSelect = document.getElementById("userSelect");
+    const searchInput = document.getElementById("searchInput");
+    const loadBtn = document.getElementById("loadBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const renameBtn = document.getElementById("renameBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const statusUsers = document.getElementById("statusUsers");
+
+    // all emails controls
+    const loadAllBtn = document.getElementById("loadAllBtn");
+    const statusAll = document.getElementById("statusAll");
+
+    // list
     const listTitle = document.getElementById("listTitle");
     const countPill = document.getElementById("countPill");
     const listBox = document.getElementById("listBox");
 
-    let currentUser = "";
     let loading = false;
+    let allUsers = [];
 
-    function setStatus(text, ok=false) {
-      statusEl.className = "status" + (ok ? " ok" : "");
-      statusEl.textContent = text || "";
+    function setStatus(el, text, ok=false) {
+      el.className = "status" + (ok ? " ok" : "");
+      el.textContent = text || "";
     }
 
     function setLoading(isLoading) {
       loading = isLoading;
+
+      // users panel
+      searchInput.disabled = isLoading;
       userSelect.disabled = isLoading;
-      loadBtn.disabled = isLoading || !userSelect.value;
-      deleteUserBtn.disabled = isLoading || !userSelect.value;
+      const enabledUser = !isLoading && !!userSelect.value;
+      loadBtn.disabled = !enabledUser;
+      clearBtn.disabled = !enabledUser;
+      renameBtn.disabled = !enabledUser;
+      deleteBtn.disabled = !enabledUser;
+
+      // all panel
+      loadAllBtn.disabled = isLoading;
     }
 
     function formatTime(ts) {
@@ -325,61 +334,64 @@
       try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
     }
 
-    function clearList() {
-      listTitle.textContent = "Emails";
+    function clearList(title="Emails") {
+      listTitle.textContent = title;
       countPill.textContent = "Emails: 0";
-      listBox.innerHTML = `<div class="empty">Kein User geladen.</div>`;
+      listBox.innerHTML = `<div class="empty">Keine Daten geladen.</div>`;
     }
 
     async function requireAdmin() {
       const res = await fetch("/api/me", { credentials: "include" });
-      if (!res.ok) {
-        location.href = "index.html";
-        return null;
-      }
+      if (!res.ok) { location.href = "index.html"; return null; }
 
       const me = await res.json().catch(() => null);
-      if (!me || me.role !== "admin") {
-        location.href = "dashboard.html";
-        return null;
-      }
+      if (!me || me.role !== "admin") { location.href = "dashboard.html"; return null; }
 
       adminName.textContent = me.username;
       return me;
     }
 
+    function renderUserOptions(users) {
+      userSelect.innerHTML = `<option value="">— auswählen —</option>` + users
+        .map(u => `<option value="${u.replace(/"/g, "&quot;")}">${u}</option>`)
+        .join("");
+    }
+
+    function applySearchFilter() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const filtered = !q ? allUsers : allUsers.filter(u => u.includes(q));
+      renderUserOptions(filtered);
+      userSelect.value = "";
+      setLoading(false);
+      clearList("Emails");
+      setStatus(statusUsers, filtered.length ? "Gefiltert ✅" : "Keine Treffer.", true);
+    }
+
     async function loadUsers() {
-      setStatus("Lade Users…");
+      setStatus(statusUsers, "Lade Users…");
       userSelect.innerHTML = `<option>Users laden…</option>`;
       userSelect.disabled = true;
-      loadBtn.disabled = true;
-      deleteUserBtn.disabled = true;
+      setLoading(true);
 
       const res = await fetch("/api/admin/users", { credentials: "include" });
       if (!res.ok) {
-        setStatus("Konnte Users nicht laden.", false);
+        setLoading(false);
+        setStatus(statusUsers, "Konnte Users nicht laden.", false);
         userSelect.innerHTML = `<option>Fehler</option>`;
         return;
       }
 
       const data = await res.json().catch(() => null);
-      const users = (data && data.users) ? data.users : [];
+      allUsers = (data && data.users) ? data.users : [];
 
-      if (!users.length) {
-        setStatus("Keine Users gefunden.", true);
-        userSelect.innerHTML = `<option value="">(leer)</option>`;
-        return;
-      }
-
-      userSelect.innerHTML = `<option value="">— auswählen —</option>` + users
-        .map(u => `<option value="${u.replace(/"/g, "&quot;")}">${u}</option>`)
-        .join("");
-
+      renderUserOptions(allUsers);
       userSelect.disabled = false;
-      setStatus("Users geladen ✅", true);
+
+      setLoading(false);
+      setStatus(statusUsers, "Users geladen ✅", true);
     }
 
-    function renderEmails(username, emails) {
+    function renderEmailsUser(username, emails) {
       listTitle.textContent = "Emails von: " + username;
       countPill.textContent = "Emails: " + (emails?.length || 0);
 
@@ -389,13 +401,22 @@
       }
 
       const ul = document.createElement("ul");
-
       for (const item of emails) {
         const li = document.createElement("li");
 
-        const emailSpan = document.createElement("span");
-        emailSpan.className = "email";
-        emailSpan.textContent = item.email;
+        const left = document.createElement("div");
+        left.className = "left";
+
+        const email = document.createElement("div");
+        email.className = "email";
+        email.textContent = item.email;
+
+        const sub = document.createElement("div");
+        sub.className = "sub";
+        sub.textContent = "User: " + username;
+
+        left.appendChild(email);
+        left.appendChild(sub);
 
         const meta = document.createElement("div");
         meta.className = "meta";
@@ -404,20 +425,10 @@
         timeSpan.className = "time";
         timeSpan.textContent = formatTime(item.ts);
 
-        const delBtn = document.createElement("button");
-        delBtn.className = "trash";
-        delBtn.textContent = "🗑";
-        delBtn.title = "Email löschen";
-        delBtn.addEventListener("click", async () => {
-          await deleteEmail(username, item.email, delBtn);
-        });
-
         meta.appendChild(timeSpan);
-        meta.appendChild(delBtn);
 
-        li.appendChild(emailSpan);
+        li.appendChild(left);
         li.appendChild(meta);
-
         ul.appendChild(li);
       }
 
@@ -427,8 +438,9 @@
 
     async function loadEmailsForUser(username) {
       if (!username) return;
+
       setLoading(true);
-      setStatus("Lade Emails von " + username + "…");
+      setStatus(statusUsers, "Lade Emails von " + username + "…");
 
       try {
         const res = await fetch("/api/admin/emails?username=" + encodeURIComponent(username), {
@@ -437,68 +449,93 @@
 
         if (!res.ok) {
           const text = await res.text();
-          setStatus(text || "Konnte Emails nicht laden.", false);
-          renderEmails(username, []);
+          setStatus(statusUsers, text || "Konnte Emails nicht laden.", false);
+          renderEmailsUser(username, []);
           return;
         }
 
         const data = await res.json().catch(() => null);
         const emails = (data && data.emails) ? data.emails : [];
 
-        currentUser = username;
-        renderEmails(username, emails);
-        setStatus("Emails geladen ✅", true);
+        renderEmailsUser(username, emails);
+        setStatus(statusUsers, "Emails geladen ✅", true);
       } catch {
-        setStatus("Server nicht erreichbar.", false);
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
       } finally {
         setLoading(false);
       }
     }
 
-    async function deleteEmail(username, email, btn) {
-      if (loading) return;
-
-      const ok = confirm(`Wirklich löschen?\n\nUser: ${username}\nEmail: ${email}`);
+    async function clearEmails(username) {
+      if (!username) return;
+      const ok = confirm(`ALLE EMAILS LÖSCHEN?\n\nUser: ${username}\n\nAccount bleibt bestehen.`);
       if (!ok) return;
 
-      btn.disabled = true;
-      setStatus("Lösche " + email + "…");
+      setLoading(true);
+      setStatus(statusUsers, "Lösche alle Emails von " + username + "…");
 
       try {
-        const res = await fetch("/api/admin/emails", {
+        const res = await fetch("/api/admin/clear-emails", {
           method: "DELETE",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, email })
+          body: JSON.stringify({ username })
         });
 
         const text = await res.text();
+        if (!res.ok) { setStatus(statusUsers, text || "Emails löschen fehlgeschlagen.", false); return; }
 
-        if (!res.ok) {
-          setStatus(text || "Löschen fehlgeschlagen.", false);
-          btn.disabled = false;
-          return;
-        }
-
-        setStatus("Gelöscht ✅", true);
+        const data = JSON.parse(text);
+        setStatus(statusUsers, `Emails gelöscht ✅ (gelöscht: ${data.deletedEmails ?? 0})`, true);
         await loadEmailsForUser(username);
       } catch {
-        setStatus("Server nicht erreichbar.", false);
-        btn.disabled = false;
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function renameUser(oldUsername) {
+      const newUsername = prompt(`User umbenennen:\n\nAlt: ${oldUsername}\n\nNeuer Username (3–20 Zeichen, a-z 0-9 _ -):`);
+      if (!newUsername) return;
+
+      const ok = confirm(`Wirklich umbenennen?\n\n${oldUsername}  →  ${newUsername.trim().toLowerCase()}`);
+      if (!ok) return;
+
+      setLoading(true);
+      setStatus(statusUsers, "Benenne um…");
+
+      try {
+        const res = await fetch("/api/admin/user", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ oldUsername, newUsername })
+        });
+
+        const text = await res.text();
+        if (!res.ok) { setStatus(statusUsers, text || "Umbenennen fehlgeschlagen.", false); return; }
+
+        const data = JSON.parse(text);
+        setStatus(statusUsers, `Umbenannt ✅ (Emails verschoben: ${data.movedEmails ?? 0})`, true);
+
+        await loadUsers();
+        searchInput.value = "";
+        userSelect.value = data.newUsername;
+        await loadEmailsForUser(data.newUsername);
+      } catch {
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
       }
     }
 
     async function deleteUser(username) {
-      if (loading) return;
-      if (!username) return;
-
-      const ok = confirm(
-        `USER KOMPLETT LÖSCHEN?\n\nUser: ${username}\n\nDas löscht Account + alle Emails.\nDiese Aktion ist endgültig.`
-      );
+      const ok = confirm(`USER KOMPLETT LÖSCHEN?\n\nUser: ${username}\n\nDas löscht Account + alle Emails.\nDiese Aktion ist endgültig.`);
       if (!ok) return;
 
       setLoading(true);
-      setStatus("Lösche User " + username + "…");
+      setStatus(statusUsers, "Lösche User " + username + "…");
 
       try {
         const res = await fetch("/api/admin/user", {
@@ -509,41 +546,130 @@
         });
 
         const text = await res.text();
-
-        if (!res.ok) {
-          setStatus(text || "User löschen fehlgeschlagen.", false);
-          return;
-        }
+        if (!res.ok) { setStatus(statusUsers, text || "User löschen fehlgeschlagen.", false); return; }
 
         const data = JSON.parse(text);
-        setStatus(`User gelöscht ✅ (Emails gelöscht: ${data.deletedEmails ?? 0})`, true);
+        setStatus(statusUsers, `User gelöscht ✅ (Emails gelöscht: ${data.deletedEmails ?? 0})`, true);
 
-        // UI reset + users neu laden
-        clearList();
+        clearList("Emails");
         await loadUsers();
         userSelect.value = "";
-        loadBtn.disabled = true;
-        deleteUserBtn.disabled = true;
-
       } catch {
-        setStatus("Server nicht erreichbar.", false);
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
       } finally {
         setLoading(false);
       }
     }
 
+    function renderAllEmails(items) {
+      listTitle.textContent = "Alle Emails";
+      countPill.textContent = "Emails: " + (items?.length || 0);
+
+      if (!items || items.length === 0) {
+        listBox.innerHTML = `<div class="empty">Keine Emails gefunden.</div>`;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      for (const it of items) {
+        const li = document.createElement("li");
+
+        const left = document.createElement("div");
+        left.className = "left";
+
+        const email = document.createElement("div");
+        email.className = "email";
+        email.textContent = it.email;
+
+        const sub = document.createElement("div");
+        sub.className = "sub";
+        sub.textContent = "User: " + it.username;
+
+        left.appendChild(email);
+        left.appendChild(sub);
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+        timeSpan.textContent = formatTime(it.ts);
+
+        meta.appendChild(timeSpan);
+
+        li.appendChild(left);
+        li.appendChild(meta);
+        ul.appendChild(li);
+      }
+
+      listBox.innerHTML = "";
+      listBox.appendChild(ul);
+    }
+
+    async function loadAllEmails() {
+      setLoading(true);
+      setStatus(statusAll, "Lade alle Emails…");
+
+      try {
+        const res = await fetch("/api/admin/all-emails?limit=1000", { credentials: "include" });
+        const text = await res.text();
+
+        if (!res.ok) {
+          setStatus(statusAll, text || "Konnte nicht laden.", false);
+          renderAllEmails([]);
+          return;
+        }
+
+        const data = JSON.parse(text);
+        setStatus(statusAll, `Geladen ✅ (gesamt: ${data.total ?? 0}, angezeigt: ${(data.emails || []).length})`, true);
+        renderAllEmails(data.emails || []);
+      } catch {
+        setStatus(statusAll, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Tabs
+    function activate(tab) {
+      if (tab === "users") {
+        tabUsers.classList.add("active");
+        tabAll.classList.remove("active");
+        usersPanel.classList.remove("hide");
+        allPanel.classList.add("hide");
+        clearList("Emails");
+      } else {
+        tabAll.classList.add("active");
+        tabUsers.classList.remove("active");
+        allPanel.classList.remove("hide");
+        usersPanel.classList.add("hide");
+        clearList("Alle Emails");
+      }
+    }
+
+    tabUsers.addEventListener("click", () => activate("users"));
+    tabAll.addEventListener("click", () => activate("all"));
+
+    // Events
     userSelect.addEventListener("change", () => {
-      loadBtn.disabled = !userSelect.value || loading;
-      deleteUserBtn.disabled = !userSelect.value || loading;
+      const enabled = !!userSelect.value && !loading;
+      loadBtn.disabled = !enabled;
+      clearBtn.disabled = !enabled;
+      renameBtn.disabled = !enabled;
+      deleteBtn.disabled = !enabled;
     });
 
-    loadBtn.addEventListener("click", () => {
-      loadEmailsForUser(userSelect.value);
+    searchInput.addEventListener("input", () => {
+      if (!allUsers.length) return;
+      applySearchFilter();
     });
 
-    deleteUserBtn.addEventListener("click", () => {
-      deleteUser(userSelect.value);
-    });
+    loadBtn.addEventListener("click", () => loadEmailsForUser(userSelect.value));
+    clearBtn.addEventListener("click", () => clearEmails(userSelect.value));
+    renameBtn.addEventListener("click", () => renameUser(userSelect.value));
+    deleteBtn.addEventListener("click", () => deleteUser(userSelect.value));
+
+    loadAllBtn.addEventListener("click", loadAllEmails);
 
     document.getElementById("backBtn").addEventListener("click", () => {
       location.href = "dashboard.html";
@@ -558,8 +684,9 @@
       const me = await requireAdmin();
       if (!me) return;
 
-      clearList();
+      clearList("Emails");
       await loadUsers();
+      setStatus(statusUsers, "Bereit ✅", true);
     })();
   </script>
 </body>
