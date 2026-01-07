@@ -18,7 +18,6 @@
       color: #111;
     }
 
-    /* TOP BAR */
     .topbar {
       position: sticky;
       top: 0;
@@ -81,13 +80,12 @@
     .btn-back { background: #1e88e5; }
     .btn-logout { background: #e53935; }
 
-    /* LAYOUT */
     .wrap {
       max-width: 1100px;
       margin: 0 auto;
       padding: 18px 18px 46px;
       display: grid;
-      grid-template-columns: 380px 1fr;
+      grid-template-columns: 420px 1fr;
       gap: 16px;
       align-items: start;
     }
@@ -117,12 +115,11 @@
       line-height: 1.45;
     }
 
-    .row {
+    .controls {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr;
       gap: 10px;
       margin-top: 10px;
-      align-items: center;
     }
 
     select {
@@ -140,9 +137,23 @@
       box-shadow: 0 0 0 4px rgba(30,136,229,0.12);
     }
 
+    .btnRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
     .btn-load {
       background: linear-gradient(135deg, #1e88e5, #43cea2);
       font-weight: 700;
+      border-radius: 12px;
+      padding: 11px 14px;
+      white-space: nowrap;
+    }
+
+    .btn-deleteUser {
+      background: linear-gradient(135deg, #e53935, #b71c1c);
+      font-weight: 800;
       border-radius: 12px;
       padding: 11px 14px;
       white-space: nowrap;
@@ -157,7 +168,6 @@
     }
     .status.ok { color: #1b5e20; }
 
-    /* EMAIL LIST */
     .headerLine {
       display: flex;
       align-items: baseline;
@@ -255,22 +265,26 @@
   </div>
 
   <div class="wrap">
-    <!-- LEFT: User Picker -->
+    <!-- LEFT -->
     <div class="card">
       <h1>User auswählen</h1>
-      <p class="hint">Wähle einen User und lade seine gespeicherten Emails. Du kannst einzelne Emails löschen.</p>
+      <p class="hint">User auswählen → Emails laden oder User komplett löschen.</p>
 
-      <div class="row">
+      <div class="controls">
         <select id="userSelect" disabled>
           <option>Users laden…</option>
         </select>
-        <button class="btn btn-load" id="loadBtn" disabled>Laden</button>
+
+        <div class="btnRow">
+          <button class="btn btn-load" id="loadBtn" disabled>Laden</button>
+          <button class="btn btn-deleteUser" id="deleteUserBtn" disabled>User löschen</button>
+        </div>
       </div>
 
       <div id="status" class="status"></div>
     </div>
 
-    <!-- RIGHT: Emails -->
+    <!-- RIGHT -->
     <div class="card">
       <div class="headerLine">
         <h1 id="listTitle">Emails</h1>
@@ -284,6 +298,7 @@
     const adminName = document.getElementById("adminName");
     const userSelect = document.getElementById("userSelect");
     const loadBtn = document.getElementById("loadBtn");
+    const deleteUserBtn = document.getElementById("deleteUserBtn");
     const statusEl = document.getElementById("status");
 
     const listTitle = document.getElementById("listTitle");
@@ -302,11 +317,18 @@
       loading = isLoading;
       userSelect.disabled = isLoading;
       loadBtn.disabled = isLoading || !userSelect.value;
+      deleteUserBtn.disabled = isLoading || !userSelect.value;
     }
 
     function formatTime(ts) {
       if (!ts) return "";
       try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
+    }
+
+    function clearList() {
+      listTitle.textContent = "Emails";
+      countPill.textContent = "Emails: 0";
+      listBox.innerHTML = `<div class="empty">Kein User geladen.</div>`;
     }
 
     async function requireAdmin() {
@@ -331,6 +353,7 @@
       userSelect.innerHTML = `<option>Users laden…</option>`;
       userSelect.disabled = true;
       loadBtn.disabled = true;
+      deleteUserBtn.disabled = true;
 
       const res = await fetch("/api/admin/users", { credentials: "include" });
       if (!res.ok) {
@@ -458,8 +481,6 @@
         }
 
         setStatus("Gelöscht ✅", true);
-
-        // reload list
         await loadEmailsForUser(username);
       } catch {
         setStatus("Server nicht erreichbar.", false);
@@ -467,12 +488,61 @@
       }
     }
 
+    async function deleteUser(username) {
+      if (loading) return;
+      if (!username) return;
+
+      const ok = confirm(
+        `USER KOMPLETT LÖSCHEN?\n\nUser: ${username}\n\nDas löscht Account + alle Emails.\nDiese Aktion ist endgültig.`
+      );
+      if (!ok) return;
+
+      setLoading(true);
+      setStatus("Lösche User " + username + "…");
+
+      try {
+        const res = await fetch("/api/admin/user", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username })
+        });
+
+        const text = await res.text();
+
+        if (!res.ok) {
+          setStatus(text || "User löschen fehlgeschlagen.", false);
+          return;
+        }
+
+        const data = JSON.parse(text);
+        setStatus(`User gelöscht ✅ (Emails gelöscht: ${data.deletedEmails ?? 0})`, true);
+
+        // UI reset + users neu laden
+        clearList();
+        await loadUsers();
+        userSelect.value = "";
+        loadBtn.disabled = true;
+        deleteUserBtn.disabled = true;
+
+      } catch {
+        setStatus("Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     userSelect.addEventListener("change", () => {
       loadBtn.disabled = !userSelect.value || loading;
+      deleteUserBtn.disabled = !userSelect.value || loading;
     });
 
     loadBtn.addEventListener("click", () => {
       loadEmailsForUser(userSelect.value);
+    });
+
+    deleteUserBtn.addEventListener("click", () => {
+      deleteUser(userSelect.value);
     });
 
     document.getElementById("backBtn").addEventListener("click", () => {
@@ -488,17 +558,8 @@
       const me = await requireAdmin();
       if (!me) return;
 
+      clearList();
       await loadUsers();
-
-      // optional: auto-select first real user
-      const first = userSelect.querySelector('option[value]:not([value=""])');
-      if (first) {
-        userSelect.value = first.value;
-        loadBtn.disabled = false;
-      }
-
-      // optional: auto-load selected user
-      if (userSelect.value) await loadEmailsForUser(userSelect.value);
     })();
   </script>
 </body>
