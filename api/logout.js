@@ -1,6 +1,6 @@
 export const config = { runtime: "nodejs" };
 
-function clearCookie(res, sameSite, secure) {
+function clearCookie(sameSite, secure) {
   const parts = [
     "token=",
     "Path=/",
@@ -14,13 +14,11 @@ function clearCookie(res, sameSite, secure) {
 }
 
 export default async function handler(req, res) {
-  // Wichtig: Cookie muss mit denselben Attributen gelöscht werden, mit denen er gesetzt wurde.
-  // Wir setzen mehrere Varianten als Fallback (None/Secure für Vercel, plus Lax-Varianten).
   res.setHeader("Set-Cookie", [
-    clearCookie(res, "None", true),
-    clearCookie(res, "Lax", true),
-    clearCookie(res, "Lax", false)
+    clearCookie("None", true),
+    clearCookie("Lax", true),
+    clearCookie("Lax", false)
   ]);
 
   return res.status(200).json({ ok: true });
-}
+}s
