@@ -7,462 +7,848 @@
 
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
+
     body {
       margin: 0;
       min-height: 100vh;
-      background: #f4f4f4;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(229,57,53,0.18), transparent 60%),
+        radial-gradient(1200px 600px at 80% 0%, rgba(30,136,229,0.22), transparent 55%),
+        linear-gradient(135deg, #f7f9fc, #eef3fb);
       color: #111;
     }
 
-    /* Topbar */
     .topbar {
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(255,255,255,0.92);
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.8);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
     }
+
     .topbar-inner {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 14px 16px;
+      padding: 14px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-    }
-    .left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
       flex-wrap: wrap;
     }
-    .title {
-      font-weight: 900;
-      letter-spacing: 0.5px;
+
+    .who {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #222;
+      flex-wrap: wrap;
     }
+
     .pill {
       padding: 8px 12px;
       border-radius: 999px;
       background: rgba(0,0,0,0.05);
-      border: 1px solid rgba(0,0,0,0.08);
+      border: 1px solid rgba(0,0,0,0.06);
       font-size: 13px;
       white-space: nowrap;
     }
-    .username { font-weight: 800; }
+
+    .adminTag {
+      background: rgba(229,57,53,0.10);
+      border: 1px solid rgba(229,57,53,0.22);
+      color: #b71c1c;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    .username { font-weight: 700; }
 
     .btn {
-      padding: 10px 12px;
+      padding: 10px 14px;
       border-radius: 10px;
       border: none;
       cursor: pointer;
       font-size: 14px;
-      color: #fff;
-      background: #1e88e5;
+      color: white;
+      transition: opacity 0.12s ease;
     }
-    .btn:hover { opacity: 0.92; }
-    .btn-danger { background: #e53935; }
-    .btn-ghost {
-      background: #111;
-      color: #fff;
-    }
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-    /* Layout */
+    .btn-back { background: #1e88e5; }
+    .btn-logout { background: #e53935; }
+
     .wrap {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 18px 16px 40px;
+      padding: 18px 18px 46px;
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
     }
 
     .card {
-      background: #fff;
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px;
       border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.10);
       padding: 16px;
     }
 
-    .card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
+    h1 { margin: 0 0 10px 0; font-size: 18px; color: #111; }
+    .hint { margin: 0 0 12px 0; color: #666; font-size: 13px; line-height: 1.45; }
+
+    .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .tab {
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(0,0,0,0.03);
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+    }
+    .tab.active {
+      background: rgba(30,136,229,0.12);
+      border-color: rgba(30,136,229,0.25);
+      font-weight: 800;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 18px;
-    }
+    .controls { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
 
-    .controls {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: flex-end;
-    }
-
-    input, select {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(0,0,0,0.18);
-      outline: none;
+    input[type="text"]{
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.16);
+      background: white;
       font-size: 14px;
-      background: #fff;
+      outline: none;
     }
-
-    input:focus, select:focus {
-      border-color: #1e88e5;
+    input[type="text"]:focus {
+      border-color: rgba(30,136,229,0.6);
       box-shadow: 0 0 0 4px rgba(30,136,229,0.12);
     }
 
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.16);
+      background: white;
+      font-size: 14px;
+      outline: none;
+    }
+    select:focus {
+      border-color: rgba(30,136,229,0.6);
+      box-shadow: 0 0 0 4px rgba(30,136,229,0.12);
+    }
+
+    .btnGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-load { background: linear-gradient(135deg, #1e88e5, #43cea2); font-weight: 800; border-radius: 12px; padding: 11px 14px; }
+    .btn-clear { background: linear-gradient(135deg, #ff9800, #f57c00); font-weight: 800; border-radius: 12px; padding: 11px 14px; }
+    .btn-rename { background: linear-gradient(135deg, #7e57c2, #5e35b1); font-weight: 800; border-radius: 12px; padding: 11px 14px; }
+    .btn-delete { background: linear-gradient(135deg, #e53935, #b71c1c); font-weight: 900; border-radius: 12px; padding: 11px 14px; }
+    .btn-send { background: linear-gradient(135deg, #43cea2, #1e88e5); font-weight: 900; border-radius: 12px; padding: 11px 14px; }
+
     .status {
-      margin-top: 10px;
+      margin-top: 12px;
       font-size: 13px;
       min-height: 18px;
-      color: #b71c1c;
       word-break: break-word;
+      color: #b71c1c;
     }
     .status.ok { color: #1b5e20; }
 
-    /* Table */
-    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(0,0,0,0.08); }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 820px;
-      background: #fff;
+    .headerLine {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
     }
-    th, td {
-      padding: 12px 12px;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-      text-align: left;
-      font-size: 14px;
-      vertical-align: middle;
+
+    .count {
+      font-size: 13px;
+      color: #444;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      padding: 7px 10px;
+      border-radius: 999px;
       white-space: nowrap;
     }
-    th {
-      font-size: 12px;
-      letter-spacing: 0.3px;
-      color: #444;
-      background: #fafafa;
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    .muted { color: #666; font-size: 12px; }
 
-    .actions {
+    ul { list-style: none; padding: 0; margin: 0; }
+
+    li {
+      padding: 12px;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: rgba(0,0,0,0.02);
       display: flex;
-      gap: 8px;
+      justify-content: space-between;
+      gap: 10px;
       align-items: center;
-      justify-content: flex-end;
+      word-break: break-word;
     }
-    .btn-small {
-      padding: 8px 10px;
-      border-radius: 10px;
-      font-size: 13px;
-    }
-    .btn-copy { background: #111; }
-    .btn-del { background: #e53935; }
-    .btn-notify { background: #43cea2; color: #111; font-weight: 800; }
 
-    .inline {
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
+    .left { min-width: 0; }
+    .email {
+      color: #111;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 620px;
+      font-weight: 700;
     }
-    .euro {
-      width: 90px;
-    }
+    .sub { color: #666; font-size: 12px; margin-top: 4px; }
+
+    .meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .time { color: #666; font-size: 12px; white-space: nowrap; }
 
     .empty {
       padding: 12px;
-      background: #fafafa;
-      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(0,0,0,0.02);
+      border: 1px solid rgba(0,0,0,0.06);
       border-radius: 12px;
-      color: #666;
-      font-size: 14px;
+      color: #444;
+      font-size: 13px;
     }
+
+    .preview {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(0,0,0,0.02);
+      font-size: 13px;
+      color: #111;
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    .hide { display: none; }
   </style>
 </head>
 
 <body>
-
   <div class="topbar">
     <div class="topbar-inner">
-      <div class="left">
-        <div class="title">ADMIN</div>
+      <div class="who">
         <div class="pill">Angemeldet als <span class="username" id="adminName">Lade…</span></div>
-        <div class="pill" id="totalPill">Emails gesamt: …</div>
+        <div class="pill adminTag">ADMIN</div>
       </div>
-      <div class="right">
-        <button class="btn btn-danger" id="logoutBtn">Logout</button>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-back" id="backBtn">Zurück</button>
+        <button class="btn btn-logout" id="logoutBtn">Logout</button>
       </div>
     </div>
   </div>
 
   <div class="wrap">
+    <!-- LEFT -->
     <div class="card">
-      <div class="card-head">
-        <h1>Alle Emails</h1>
-
-        <div class="controls">
-          <input id="qInput" type="text" placeholder="Suche: email oder username…" autocomplete="off" />
-          <select id="userFilter">
-            <option value="">Alle User</option>
-          </select>
-
-          <select id="limitSelect" title="Limit">
-            <option value="200">200</option>
-            <option value="500">500</option>
-            <option value="1000" selected>1000</option>
-            <option value="2000">2000</option>
-            <option value="5000">5000</option>
-          </select>
-
-          <button class="btn btn-ghost" id="refreshBtn">Refresh</button>
-        </div>
+      <div class="tabs">
+        <!-- ✅ FIX 1: Default Active = Alle Emails -->
+        <div class="tab" id="tabUsers">User Verwaltung</div>
+        <div class="tab active" id="tabAll">Alle Emails</div>
+        <div class="tab" id="tabNotify">Benachrichtigen</div>
       </div>
 
-      <div class="table-wrap" id="tableWrap"></div>
-      <div class="status" id="status"></div>
+      <!-- USERS PANEL (✅ FIX 2: hidden by default) -->
+      <div id="usersPanel" class="hide">
+        <h1>User Verwaltung</h1>
+        <p class="hint">Suche → User auswählen → Laden / Emails löschen / Umbenennen / User löschen.</p>
+
+        <div class="controls">
+          <input id="searchInput" type="text" placeholder="User suchen…" autocomplete="off" />
+          <select id="userSelect" disabled>
+            <option>Users laden…</option>
+          </select>
+
+          <div class="btnGrid">
+            <button class="btn btn-load" id="loadBtn" disabled>Laden</button>
+            <button class="btn btn-clear" id="clearBtn" disabled>Emails löschen</button>
+            <button class="btn btn-rename" id="renameBtn" disabled>Umbenennen</button>
+            <button class="btn btn-delete" id="deleteBtn" disabled>User löschen</button>
+          </div>
+        </div>
+
+        <div id="statusUsers" class="status"></div>
+      </div>
+
+      <!-- ALL EMAILS PANEL (✅ FIX 2: visible by default) -->
+      <div id="allPanel">
+        <h1>Alle Emails</h1>
+        <p class="hint">Alle gespeicherten Emails zusammen – jeweils mit Username.</p>
+
+        <div class="controls">
+          <button class="btn btn-load" id="loadAllBtn">Alle laden</button>
+        </div>
+
+        <div id="statusAll" class="status"></div>
+      </div>
+
+      <!-- NOTIFY PANEL -->
+      <div id="notifyPanel" class="hide">
+        <h1>Benachrichtigen</h1>
+        <p class="hint">Wähle einen User und gib den Betrag ein. Nachricht ist fest vorgegeben.</p>
+
+        <div class="controls">
+          <select id="notifyUserSelect" disabled>
+            <option>Users laden…</option>
+          </select>
+
+          <input id="euroInput" type="text" placeholder="Betrag in Euro (z.B. 25 oder 12,50)" />
+
+          <div class="preview" id="previewBox">
+            Du bekommst für eine deiner Emails <b>…</b> Euro. Herzlichen Glückwunsch.
+          </div>
+
+          <button class="btn btn-send" id="sendNotifyBtn" disabled>Nachricht senden</button>
+        </div>
+
+        <div id="statusNotify" class="status"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT LIST -->
+    <div class="card">
+      <div class="headerLine">
+        <h1 id="listTitle">Alle Emails</h1>
+        <div class="count" id="countPill">Emails: 0</div>
+      </div>
+      <div id="listBox"></div>
     </div>
   </div>
 
   <script>
     const adminName = document.getElementById("adminName");
-    const totalPill = document.getElementById("totalPill");
-    const statusEl = document.getElementById("status");
-    const tableWrap = document.getElementById("tableWrap");
 
-    const qInput = document.getElementById("qInput");
-    const userFilter = document.getElementById("userFilter");
-    const limitSelect = document.getElementById("limitSelect");
+    // Tabs
+    const tabUsers = document.getElementById("tabUsers");
+    const tabAll = document.getElementById("tabAll");
+    const tabNotify = document.getElementById("tabNotify");
 
-    let allRows = [];   // {username,email,ts}
-    let users = [];
+    const usersPanel = document.getElementById("usersPanel");
+    const allPanel = document.getElementById("allPanel");
+    const notifyPanel = document.getElementById("notifyPanel");
 
-    function setStatus(text, ok=false) {
-      statusEl.className = "status" + (ok ? " ok" : "");
-      statusEl.textContent = text || "";
+    // Users controls
+    const userSelect = document.getElementById("userSelect");
+    const searchInput = document.getElementById("searchInput");
+    const loadBtn = document.getElementById("loadBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const renameBtn = document.getElementById("renameBtn");
+    const deleteBtn = document.getElementById("deleteBtn");
+    const statusUsers = document.getElementById("statusUsers");
+
+    // All emails
+    const loadAllBtn = document.getElementById("loadAllBtn");
+    const statusAll = document.getElementById("statusAll");
+
+    // Notify
+    const notifyUserSelect = document.getElementById("notifyUserSelect");
+    const euroInput = document.getElementById("euroInput");
+    const previewBox = document.getElementById("previewBox");
+    const sendNotifyBtn = document.getElementById("sendNotifyBtn");
+    const statusNotify = document.getElementById("statusNotify");
+
+    // List
+    const listTitle = document.getElementById("listTitle");
+    const countPill = document.getElementById("countPill");
+    const listBox = document.getElementById("listBox");
+
+    let loading = false;
+    let allUsers = [];
+
+    function setStatus(el, text, ok=false) {
+      el.className = "status" + (ok ? " ok" : "");
+      el.textContent = text || "";
     }
 
-    function fmtTime(ts) {
+    function setLoading(isLoading) {
+      loading = isLoading;
+
+      // USERS tab
+      searchInput.disabled = isLoading;
+      userSelect.disabled = isLoading;
+      const enabledUser = !isLoading && !!userSelect.value;
+      loadBtn.disabled = !enabledUser;
+      clearBtn.disabled = !enabledUser;
+      renameBtn.disabled = !enabledUser;
+      deleteBtn.disabled = !enabledUser;
+
+      // ALL tab
+      loadAllBtn.disabled = isLoading;
+
+      // NOTIFY tab
+      notifyUserSelect.disabled = isLoading;
+      sendNotifyBtn.disabled = isLoading || !notifyUserSelect.value || !isEuroOk(euroInput.value);
+    }
+
+    function formatTime(ts) {
       if (!ts) return "";
       try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
     }
 
+    function clearList(title="Emails") {
+      listTitle.textContent = title;
+      countPill.textContent = "Emails: 0";
+      listBox.innerHTML = `<div class="empty">Keine Daten geladen.</div>`;
+    }
+
     async function requireAdmin() {
-      const res = await fetch("/api/me?t=" + Date.now(), { credentials: "include", cache: "no-store" });
+      const res = await fetch("/api/me", { credentials: "include" });
       if (!res.ok) { location.href = "index.html"; return null; }
+
       const me = await res.json().catch(() => null);
       if (!me || me.role !== "admin") { location.href = "dashboard.html"; return null; }
+
       adminName.textContent = me.username;
       return me;
     }
 
+    function renderUserOptions(selectEl, users, keepValue=false) {
+      const prev = keepValue ? selectEl.value : "";
+      selectEl.innerHTML = `<option value="">— auswählen —</option>` + users
+        .map(u => `<option value="${u.replace(/"/g, "&quot;")}">${u}</option>`)
+        .join("");
+      if (prev && users.includes(prev)) selectEl.value = prev;
+    }
+
+    function applySearchFilter() {
+      const q = (searchInput.value || "").trim().toLowerCase();
+      const filtered = !q ? allUsers : allUsers.filter(u => u.includes(q));
+      renderUserOptions(userSelect, filtered, false);
+      userSelect.value = "";
+      setLoading(false);
+      clearList("Emails");
+      setStatus(statusUsers, filtered.length ? "Gefiltert ✅" : "Keine Treffer.", true);
+    }
+
     async function loadUsers() {
-      const res = await fetch("/api/admin?action=users&t=" + Date.now(), { credentials: "include", cache: "no-store" });
-      if (!res.ok) return [];
+      setStatus(statusUsers, "Lade Users…");
+      setStatus(statusAll, "");
+      setStatus(statusNotify, "");
 
-      const data = await res.json().catch(() => ({ users: [] }));
-      const list = (data.users || []).filter(Boolean).sort();
-      users = list;
+      userSelect.innerHTML = `<option>Users laden…</option>`;
+      notifyUserSelect.innerHTML = `<option>Users laden…</option>`;
+      userSelect.disabled = true;
+      notifyUserSelect.disabled = true;
 
-      // Dropdown füllen
-      userFilter.innerHTML = `<option value="">Alle User</option>` + list.map(u => (
-        `<option value="${u}">${u}</option>`
-      )).join("");
+      setLoading(true);
 
-      return list;
+      const res = await fetch("/api/admin?action=users", { credentials: "include" });
+      if (!res.ok) {
+        setLoading(false);
+        setStatus(statusUsers, "Konnte Users nicht laden.", false);
+        userSelect.innerHTML = `<option>Fehler</option>`;
+        notifyUserSelect.innerHTML = `<option>Fehler</option>`;
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      allUsers = (data && data.users) ? data.users : [];
+
+      renderUserOptions(userSelect, allUsers, false);
+      renderUserOptions(notifyUserSelect, allUsers, false);
+
+      userSelect.disabled = false;
+      notifyUserSelect.disabled = false;
+
+      setLoading(false);
+      setStatus(statusUsers, "Users geladen ✅", true);
+    }
+
+    function renderEmailsUser(username, emails) {
+      listTitle.textContent = "Emails von: " + username;
+      countPill.textContent = "Emails: " + (emails?.length || 0);
+
+      if (!emails || emails.length === 0) {
+        listBox.innerHTML = `<div class="empty">Keine Emails gespeichert.</div>`;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      for (const item of emails) {
+        const li = document.createElement("li");
+
+        const left = document.createElement("div");
+        left.className = "left";
+
+        const email = document.createElement("div");
+        email.className = "email";
+        email.textContent = item.email;
+
+        const sub = document.createElement("div");
+        sub.className = "sub";
+        sub.textContent = "User: " + username;
+
+        left.appendChild(email);
+        left.appendChild(sub);
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+        timeSpan.textContent = formatTime(item.ts);
+
+        meta.appendChild(timeSpan);
+
+        li.appendChild(left);
+        li.appendChild(meta);
+        ul.appendChild(li);
+      }
+
+      listBox.innerHTML = "";
+      listBox.appendChild(ul);
+    }
+
+    async function loadEmailsForUser(username) {
+      if (!username) return;
+
+      setLoading(true);
+      setStatus(statusUsers, "Lade Emails von " + username + "…");
+
+      try {
+        const res = await fetch("/api/admin?action=emails&username=" + encodeURIComponent(username), {
+          credentials: "include"
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          setStatus(statusUsers, text || "Konnte Emails nicht laden.", false);
+          renderEmailsUser(username, []);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        const emails = (data && data.emails) ? data.emails : [];
+
+        renderEmailsUser(username, emails);
+        setStatus(statusUsers, "Emails geladen ✅", true);
+      } catch {
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function clearEmails(username) {
+      if (!username) return;
+      const ok = confirm(`ALLE EMAILS LÖSCHEN?\n\nUser: ${username}\n\nAccount bleibt bestehen.`);
+      if (!ok) return;
+
+      setLoading(true);
+      setStatus(statusUsers, "Lösche alle Emails von " + username + "…");
+
+      try {
+        const res = await fetch("/api/admin?action=clear-emails", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username })
+        });
+
+        const text = await res.text();
+        if (!res.ok) { setStatus(statusUsers, text || "Emails löschen fehlgeschlagen.", false); return; }
+
+        const data = JSON.parse(text);
+        setStatus(statusUsers, `Emails gelöscht ✅ (gelöscht: ${data.deletedEmails ?? 0})`, true);
+        await loadEmailsForUser(username);
+      } catch {
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function renameUser(oldUsername) {
+      const newUsername = prompt(`User umbenennen:\n\nAlt: ${oldUsername}\n\nNeuer Username (3–20 Zeichen, a-z 0-9 _ -):`);
+      if (!newUsername) return;
+
+      const ok = confirm(`Wirklich umbenennen?\n\n${oldUsername}  →  ${newUsername.trim().toLowerCase()}`);
+      if (!ok) return;
+
+      setLoading(true);
+      setStatus(statusUsers, "Benenne um…");
+
+      try {
+        const res = await fetch("/api/admin?action=user", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ oldUsername, newUsername })
+        });
+
+        const text = await res.text();
+        if (!res.ok) { setStatus(statusUsers, text || "Umbenennen fehlgeschlagen.", false); return; }
+
+        const data = JSON.parse(text);
+        setStatus(statusUsers, `Umbenannt ✅ (Emails verschoben: ${data.movedEmails ?? 0})`, true);
+
+        await loadUsers();
+        searchInput.value = "";
+        userSelect.value = data.newUsername;
+        notifyUserSelect.value = data.newUsername;
+        await loadEmailsForUser(data.newUsername);
+      } catch {
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function deleteUser(username) {
+      const ok = confirm(`USER KOMPLETT LÖSCHEN?\n\nUser: ${username}\n\nDas löscht Account + alle Emails.\nDiese Aktion ist endgültig.`);
+      if (!ok) return;
+
+      setLoading(true);
+      setStatus(statusUsers, "Lösche User " + username + "…");
+
+      try {
+        const res = await fetch("/api/admin?action=user", {
+          method: "DELETE",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username })
+        });
+
+        const text = await res.text();
+        if (!res.ok) { setStatus(statusUsers, text || "User löschen fehlgeschlagen.", false); return; }
+
+        const data = JSON.parse(text);
+        setStatus(statusUsers, `User gelöscht ✅ (Emails gelöscht: ${data.deletedEmails ?? 0})`, true);
+
+        clearList("Emails");
+        await loadUsers();
+        userSelect.value = "";
+        notifyUserSelect.value = "";
+      } catch {
+        setStatus(statusUsers, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderAllEmails(items) {
+      listTitle.textContent = "Alle Emails";
+      countPill.textContent = "Emails: " + (items?.length || 0);
+
+      if (!items || items.length === 0) {
+        listBox.innerHTML = `<div class="empty">Keine Emails gefunden.</div>`;
+        return;
+      }
+
+      const ul = document.createElement("ul");
+      for (const it of items) {
+        const li = document.createElement("li");
+
+        const left = document.createElement("div");
+        left.className = "left";
+
+        const email = document.createElement("div");
+        email.className = "email";
+        email.textContent = it.email;
+
+        const sub = document.createElement("div");
+        sub.className = "sub";
+        sub.textContent = "User: " + it.username;
+
+        left.appendChild(email);
+        left.appendChild(sub);
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+        timeSpan.textContent = formatTime(it.ts);
+
+        meta.appendChild(timeSpan);
+
+        li.appendChild(left);
+        li.appendChild(meta);
+        ul.appendChild(li);
+      }
+
+      listBox.innerHTML = "";
+      listBox.appendChild(ul);
     }
 
     async function loadAllEmails() {
-      setStatus("Lade Emails…");
-      const limit = Number(limitSelect.value || 1000);
+      setLoading(true);
+      setStatus(statusAll, "Lade alle Emails…");
 
-      const res = await fetch("/api/admin?action=all-emails&limit=" + limit + "&t=" + Date.now(), {
-        credentials: "include",
-        cache: "no-store"
-      });
+      try {
+        const res = await fetch("/api/admin?action=all-emails&limit=1000", { credentials: "include" });
+        const text = await res.text();
 
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        setStatus(t || "Fehler beim Laden", false);
-        tableWrap.innerHTML = `<div class="empty">Konnte Emails nicht laden.</div>`;
-        totalPill.textContent = "Emails gesamt: 0";
-        return;
+        if (!res.ok) {
+          setStatus(statusAll, text || "Konnte nicht laden.", false);
+          renderAllEmails([]);
+          return;
+        }
+
+        const data = JSON.parse(text);
+        setStatus(statusAll, `Geladen ✅ (gesamt: ${data.total ?? 0}, angezeigt: ${(data.emails || []).length})`, true);
+        renderAllEmails(data.emails || []);
+      } catch {
+        setStatus(statusAll, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
       }
-
-      const data = await res.json().catch(() => ({ emails: [], total: 0 }));
-      allRows = (data.emails || []).map(x => ({
-        username: String(x.username || "").toLowerCase(),
-        email: String(x.email || "").toLowerCase(),
-        ts: typeof x.ts === "number" ? x.ts : null
-      }));
-
-      totalPill.textContent = "Emails gesamt: " + (data.total ?? allRows.length);
-      setStatus("OK", true);
-      render();
     }
 
-    function render() {
-      const q = (qInput.value || "").trim().toLowerCase();
-      const u = (userFilter.value || "").trim().toLowerCase();
+    // -------- NOTIFY TAB ----------
+    function isEuroOk(val) {
+      const s = String(val || "").trim().replace(",", ".");
+      const n = Number(s);
+      return Number.isFinite(n) && n > 0;
+    }
 
-      const rows = allRows.filter(r => {
-        if (u && r.username !== u) return false;
-        if (!q) return true;
-        return r.username.includes(q) || r.email.includes(q);
-      });
+    function euroNormalized(val) {
+      const s = String(val || "").trim().replace(",", ".");
+      const n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      const rounded = Math.round(n * 100) / 100;
+      if (rounded <= 0) return null;
+      return rounded;
+    }
 
-      if (!rows.length) {
-        tableWrap.innerHTML = `<div class="empty">Keine Treffer.</div>`;
-        return;
+    function updatePreview() {
+      const n = euroNormalized(euroInput.value);
+      const shown = (n === null) ? "…" : String(n);
+      previewBox.innerHTML = `Du bekommst für eine deiner Emails <b>${shown}</b> Euro. Herzlichen Glückwunsch.`;
+      sendNotifyBtn.disabled = loading || !notifyUserSelect.value || (n === null);
+    }
+
+    async function sendNotify() {
+      const username = notifyUserSelect.value;
+      const euro = euroNormalized(euroInput.value);
+
+      if (!username) return setStatus(statusNotify, "Bitte User auswählen.", false);
+      if (euro === null) return setStatus(statusNotify, "Bitte gültigen Betrag eingeben.", false);
+
+      setLoading(true);
+      setStatus(statusNotify, "Sende Nachricht…");
+
+      try {
+        const res = await fetch("/api/admin?action=notify", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, euro })
+        });
+
+        const text = await res.text();
+        if (!res.ok) {
+          setStatus(statusNotify, text || "Senden fehlgeschlagen.", false);
+          return;
+        }
+
+        setStatus(statusNotify, "Nachricht gesendet ✅", true);
+        euroInput.value = "";
+        updatePreview();
+      } catch {
+        setStatus(statusNotify, "Server nicht erreichbar.", false);
+      } finally {
+        setLoading(false);
       }
-
-      const html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Zeit</th>
-              <th>Email</th>
-              <th>User</th>
-              <th style="text-align:right;">Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map((r, idx) => `
-              <tr data-idx="${idx}">
-                <td class="muted">${fmtTime(r.ts)}</td>
-                <td class="mono">${escapeHtml(r.email)}</td>
-                <td class="mono">${escapeHtml(r.username)}</td>
-                <td style="text-align:right;">
-                  <div class="actions">
-                    <button class="btn btn-small btn-copy" data-copy="${escapeAttr(r.email)}">Copy</button>
-
-                    <span class="inline">
-                      <input class="euro" data-euro="${escapeAttr(r.username)}" inputmode="decimal" placeholder="€" />
-                      <button class="btn btn-small btn-notify" data-notify="${escapeAttr(r.username)}">Notify</button>
-                    </span>
-
-                    <button class="btn btn-small btn-del" data-del="${escapeAttr(r.username)}|${escapeAttr(r.email)}">Löschen</button>
-                  </div>
-                </td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      `;
-
-      tableWrap.innerHTML = html;
-      wireTableEvents();
     }
 
-    function wireTableEvents() {
-      // Copy
-      tableWrap.querySelectorAll("[data-copy]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const email = btn.getAttribute("data-copy") || "";
-          try {
-            await navigator.clipboard.writeText(email);
-            setStatus("Kopiert: " + email, true);
-          } catch {
-            setStatus("Copy nicht möglich (Browser).", false);
-          }
-        });
-      });
+    // Tabs
+    function activate(tab) {
+      tabUsers.classList.remove("active");
+      tabAll.classList.remove("active");
+      tabNotify.classList.remove("active");
 
-      // Notify
-      tableWrap.querySelectorAll("[data-notify]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const username = (btn.getAttribute("data-notify") || "").toLowerCase();
-          const input = tableWrap.querySelector(`[data-euro="${CSS.escape(username)}"]`);
-          const euro = input ? input.value.trim() : "";
+      usersPanel.classList.add("hide");
+      allPanel.classList.add("hide");
+      notifyPanel.classList.add("hide");
 
-          if (!euro) { setStatus("Bitte €-Betrag eingeben.", false); return; }
-
-          const res = await fetch("/api/admin?action=notify&t=" + Date.now(), {
-            method: "POST",
-            credentials: "include",
-            cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, euro })
-          });
-
-          const text = await res.text().catch(() => "");
-          if (!res.ok) { setStatus(text || "Notify fehlgeschlagen.", false); return; }
-
-          setStatus("Nachricht gesendet an " + username + " ✅", true);
-          if (input) input.value = "";
-        });
-      });
-
-      // Delete Email
-      tableWrap.querySelectorAll("[data-del]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const v = btn.getAttribute("data-del") || "";
-          const [username, email] = v.split("|").map(s => (s || "").toLowerCase());
-          if (!username || !email) return;
-
-          if (!confirm(`Email wirklich löschen?\n\n${email}\n(User: ${username})`)) return;
-
-          const res = await fetch("/api/admin?action=emails&t=" + Date.now(), {
-            method: "DELETE",
-            credentials: "include",
-            cache: "no-store",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ username, email })
-          });
-
-          const text = await res.text().catch(() => "");
-          if (!res.ok) { setStatus(text || "Löschen fehlgeschlagen.", false); return; }
-
-          // lokal entfernen
-          allRows = allRows.filter(r => !(r.username === username && r.email === email));
-          setStatus("Gelöscht ✅", true);
-          render();
-        });
-      });
+      if (tab === "users") {
+        tabUsers.classList.add("active");
+        usersPanel.classList.remove("hide");
+        clearList("Emails");
+      } else if (tab === "all") {
+        tabAll.classList.add("active");
+        allPanel.classList.remove("hide");
+        clearList("Alle Emails");
+      } else {
+        tabNotify.classList.add("active");
+        notifyPanel.classList.remove("hide");
+        clearList("Benachrichtigen");
+        euroInput.focus();
+      }
     }
 
-    function escapeHtml(s) {
-      return String(s || "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function escapeAttr(s) {
-      // minimal ok für data-attr
-      return escapeHtml(s).replaceAll("`","&#096;");
-    }
+    tabUsers.addEventListener("click", () => activate("users"));
+    tabAll.addEventListener("click", () => activate("all"));
+    tabNotify.addEventListener("click", () => activate("notify"));
 
-    // Controls
-    qInput.addEventListener("input", () => render());
-    userFilter.addEventListener("change", () => render());
-    document.getElementById("refreshBtn").addEventListener("click", async () => {
-      await loadAllEmails();
+    // Events
+    userSelect.addEventListener("change", () => {
+      const enabled = !!userSelect.value && !loading;
+      loadBtn.disabled = !enabled;
+      clearBtn.disabled = !enabled;
+      renameBtn.disabled = !enabled;
+      deleteBtn.disabled = !enabled;
+    });
+
+    searchInput.addEventListener("input", () => {
+      if (!allUsers.length) return;
+      applySearchFilter();
+    });
+
+    loadBtn.addEventListener("click", () => loadEmailsForUser(userSelect.value));
+    clearBtn.addEventListener("click", () => clearEmails(userSelect.value));
+    renameBtn.addEventListener("click", () => renameUser(userSelect.value));
+    deleteBtn.addEventListener("click", () => deleteUser(userSelect.value));
+
+    loadAllBtn.addEventListener("click", loadAllEmails);
+
+    notifyUserSelect.addEventListener("change", updatePreview);
+    euroInput.addEventListener("input", updatePreview);
+    euroInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); sendNotify(); }
+    });
+    sendNotifyBtn.addEventListener("click", sendNotify);
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+      location.href = "dashboard.html";
     });
 
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await fetch("/api/logout", { credentials: "include", cache: "no-store" });
+      await fetch("/api/logout", { credentials: "include" });
       location.href = "index.html?loggedout=1";
     });
 
-    // Init
     (async () => {
       const me = await requireAdmin();
       if (!me) return;
 
+      clearList("Alle Emails");
       await loadUsers();
+      updatePreview();
+
+      // ✅ FIX 3: Start direkt in "Alle Emails" + automatisch laden
+      activate("all");
       await loadAllEmails();
+
+      setStatus(statusAll, "Bereit ✅", true);
     })();
   </script>
 </body>
