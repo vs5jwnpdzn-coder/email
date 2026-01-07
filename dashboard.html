@@ -18,12 +18,14 @@
       color: #111;
     }
 
+    /* ===== Topbar ===== */
+
     .topbar {
       position: sticky;
       top: 0;
       z-index: 50;
       backdrop-filter: blur(10px);
-      background: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.85);
       border-bottom: 1px solid rgba(0,0,0,0.06);
     }
 
@@ -69,6 +71,8 @@
     .btn-mails { background: #1e88e5; }
     .btn-logout { background: #e53935; }
     .btn:hover { opacity: 0.9; }
+
+    /* ===== Layout ===== */
 
     .wrap {
       max-width: 1000px;
@@ -120,7 +124,6 @@
       box-shadow: 0 0 0 4px rgba(30,136,229,0.15);
     }
 
-    /* ✅ Speed visual feedback (kurz grün/rot) */
     .email-input.ok {
       border-color: rgba(67,206,162,0.9);
       box-shadow: 0 0 0 4px rgba(67,206,162,0.18);
@@ -153,12 +156,31 @@
       min-height: 18px;
       color: #b71c1c;
     }
-
     .msg.success { color: #1b5e20; }
+
+    /* ===== Inbox Badge ===== */
+
+    .badge-dot{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:18px;
+      height:18px;
+      padding:0 6px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      margin-left:8px;
+      background:#e53935;
+      color:#fff;
+    }
+    .badge-hidden{ display:none; }
   </style>
 </head>
 
 <body>
+
+  <!-- ===== Topbar ===== -->
   <div class="topbar">
     <div class="topbar-inner">
       <div class="who">
@@ -170,12 +192,16 @@
 
       <div style="display:flex; gap:10px;">
         <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
-        <button class="btn btn-mails" id="inboxBtn">Posteingang</button>
+        <button class="btn btn-mails" id="inboxBtn">
+          Posteingang
+          <span id="inboxBadge" class="badge-dot badge-hidden">0</span>
+        </button>
         <button class="btn btn-logout" id="logoutBtn">Logout</button>
       </div>
     </div>
   </div>
 
+  <!-- ===== Content ===== -->
   <div class="wrap">
     <div class="card">
       <div class="headline">EMAIL = GELD</div>
@@ -196,25 +222,24 @@
     </div>
   </div>
 
+  <!-- ===== Script ===== -->
   <script>
     const msg = document.getElementById("msg");
     const sendBtn = document.getElementById("sendBtn");
     const emailInput = document.getElementById("emailInput");
     const countPill = document.getElementById("countPill");
+    const inboxBadge = document.getElementById("inboxBadge");
 
     let inFlight = false;
+
+    const emailValid = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
     function setMsg(text, ok=false) {
       msg.className = "msg" + (ok ? " success" : "");
       msg.textContent = text || "";
     }
 
-    function emailValid(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
     function flashInput(state) {
-      // state: "ok" | "bad" | ""
       emailInput.classList.remove("ok", "bad");
       if (state) emailInput.classList.add(state);
       if (state) setTimeout(() => emailInput.classList.remove(state), 450);
@@ -238,21 +263,32 @@
       countPill.textContent = "Emails: " + (data.emails || []).length;
     }
 
+    async function refreshInboxBadge() {
+      try {
+        const res = await fetch("/api/inbox", { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        const n = Number(data.unreadCount || 0);
+
+        if (n > 0) {
+          inboxBadge.textContent = n > 99 ? "99+" : String(n);
+          inboxBadge.classList.remove("badge-hidden");
+        } else {
+          inboxBadge.classList.add("badge-hidden");
+        }
+      } catch {}
+    }
+
     async function sendEmail() {
-      if (inFlight) return; // ✅ kein Doppelklick / Doppel-Enter
+      if (inFlight) return;
 
       const email = emailInput.value.trim().toLowerCase();
       setMsg("");
 
-      if (!email) {
+      if (!email || !emailValid(email)) {
         flashInput("bad");
         emailInput.focus();
-        return setMsg("Bitte eine Email eingeben.");
-      }
-      if (!emailValid(email)) {
-        flashInput("bad");
-        emailInput.focus();
-        emailInput.select(); // ✅ schneller überschreiben
+        emailInput.select();
         return setMsg("Ungültige Email-Adresse.");
       }
 
@@ -268,64 +304,58 @@
         });
 
         const text = await res.text();
-
         if (!res.ok) {
           flashInput("bad");
           setMsg(text || "Fehler beim Speichern.");
-          // ✅ Speed: Cursor bleibt im Feld & markiert zum Überschreiben
           emailInput.focus();
           emailInput.select();
           return;
         }
 
-        // ✅ Success Speed-Mode
         flashInput("ok");
         setMsg("Gespeichert ✅", true);
         emailInput.value = "";
         await refreshCount();
-
-        // ✅ sofort wieder bereit
         emailInput.focus();
       } catch {
         flashInput("bad");
         setMsg("Server nicht erreichbar.");
-        emailInput.focus();
-        emailInput.select();
       } finally {
         inFlight = false;
         sendBtn.disabled = false;
       }
     }
 
-    // Click
-    sendBtn.addEventListener("click", sendEmail);
+    /* ===== Events ===== */
 
-    // ✅ Enter = speichern (ohne Klick)
-    emailInput.addEventListener("keydown", (e) => {
+    sendBtn.addEventListener("click", sendEmail);
+    emailInput.addEventListener("keydown", e => {
       if (e.key === "Enter") {
         e.preventDefault();
         sendEmail();
       }
     });
 
-    document.getElementById("myEmailsBtn").addEventListener("click", () => {
-      location.href = "myemails.html";
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
+    document.getElementById("myEmailsBtn").onclick = () => location.href = "myemails.html";
+    document.getElementById("inboxBtn").onclick = () => location.href = "inbox.html";
+    document.getElementById("logoutBtn").onclick = async () => {
       await fetch("/api/logout", { credentials: "include" });
       location.href = "index.html?loggedout=1";
-    });
-    document.getElementById("inboxBtn").addEventListener("click", () => {
-  location.href = "inbox.html";
-});
+    };
+
+    /* ===== Init ===== */
 
     (async () => {
       const me = await checkLogin();
       if (!me) return;
+
       await refreshCount();
-      emailInput.focus(); // ✅ sofort ready
+      await refreshInboxBadge();
+      setInterval(refreshInboxBadge, 8000);
+
+      emailInput.focus();
     })();
   </script>
+
 </body>
 </html>

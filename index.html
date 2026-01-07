@@ -77,7 +77,7 @@
 
 <body>
 
-<!-- ✅ Auto-Redirect, aber NICHT wenn ?loggedout=1 -->
+<!-- ✅ Auto-Redirect (Admin → admin.html, User → dashboard.html) -->
 <script>
 (async () => {
   try {
@@ -85,11 +85,11 @@
     if (params.get("loggedout") === "1") return;
 
     const res = await fetch("/api/me", { credentials: "include" });
-    if (res.ok) {
-      const me = await res.json().catch(() => null);
-      if (me && me.role === "admin") location.href = "admin.html";
-      else location.href = "dashboard.html";
-    }
+    if (!res.ok) return;
+
+    const me = await res.json();
+    if (me.role === "admin") location.href = "admin.html";
+    else location.href = "dashboard.html";
   } catch {}
 })();
 </script>
@@ -117,14 +117,12 @@ const form = document.getElementById("loginForm");
 const errorBox = document.getElementById("errorBox");
 const infoBox = document.getElementById("infoBox");
 
-// Info anzeigen, wenn man gerade ausgeloggt wurde
+// Info anzeigen, wenn ausgeloggt
 (() => {
   const params = new URLSearchParams(location.search);
   if (params.get("loggedout") === "1") {
     infoBox.textContent = "Du wurdest ausgeloggt.";
     infoBox.style.display = "block";
-
-    // loggedout-Flag zum Registrieren mitnehmen
     const a = document.getElementById("registerLink");
     if (a) a.href = "register.html?loggedout=1";
   }
@@ -146,13 +144,9 @@ form.addEventListener("submit", async (e) => {
     });
 
     if (res.ok) {
-      // ✅ Server entscheidet, wohin
       const out = await res.json().catch(() => ({}));
-      if (out.redirect === "admin") {
-        location.href = "admin.html";
-      } else {
-        location.href = "dashboard.html";
-      }
+      if (out.redirect === "admin") location.href = "admin.html";
+      else location.href = "dashboard.html";
     } else {
       errorBox.textContent = await res.text();
       errorBox.style.display = "block";
