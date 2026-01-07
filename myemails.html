@@ -20,14 +20,12 @@
       left: 16px;
       font-size: 14px;
       color: #333;
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.95);
       padding: 8px 12px;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       z-index: 10;
     }
-
-    .username { font-weight: bold; }
 
     .top-right {
       position: fixed;
@@ -37,6 +35,8 @@
       gap: 10px;
       z-index: 10;
     }
+
+    .username { font-weight: bold; }
 
     .btn {
       padding: 10px 14px;
@@ -62,7 +62,6 @@
     }
 
     h1 { margin: 0 0 10px 0; font-size: 22px; color: #222; }
-
     .hint { margin: 0 0 18px 0; color: #666; font-size: 14px; }
 
     .status {
@@ -70,10 +69,11 @@
       background: #fafafa;
       border: 1px solid #eee;
       border-radius: 10px;
-      color: #444;
+      color: #111;
       font-size: 14px;
       margin-bottom: 12px;
       word-break: break-word;
+      white-space: pre-wrap;
     }
 
     ul { list-style: none; padding: 0; margin: 0; }
@@ -94,7 +94,6 @@
     .email { color: #222; }
     .time { color: #666; font-size: 12px; white-space: nowrap; }
 
-    /* Debug badge */
     .badge {
       position: fixed;
       bottom: 12px;
@@ -105,14 +104,13 @@
       border-radius: 10px;
       font-size: 12px;
       z-index: 9999;
-      opacity: 0.9;
+      opacity: 0.92;
     }
   </style>
 </head>
 
 <body>
-
-  <div class="badge">myemails.html geladen ✅</div>
+  <div class="badge">myemails.html ✅ (Debug aktiv)</div>
 
   <div class="top-left">
     Angemeldet als:
@@ -126,9 +124,9 @@
 
   <div class="card">
     <h1>Meine Emails</h1>
-    <p class="hint">Hier siehst du alle Emails, die du bisher gespeichert/gesendet hast.</p>
+    <p class="hint">Diese Seite zeigt immer Debug-Infos (damit sie nie „leer“ wirkt).</p>
 
-    <div class="status" id="statusBox">Starte…</div>
+    <div class="status" id="statusBox">Start…</div>
     <div id="listBox"></div>
   </div>
 
@@ -138,50 +136,54 @@
 
     function formatTime(ts) {
       if (!ts) return "";
-      try { return new Date(ts).toLocaleString("de-DE"); }
-      catch { return ""; }
+      try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
     }
 
     async function load() {
-      statusBox.textContent = "Prüfe Login…";
+      statusBox.textContent = "1) Seite geladen ✅\n2) Prüfe /api/me …";
 
-      // 1) Login prüfen
+      // /api/me
       const meRes = await fetch("/api/me");
+      const meText = await meRes.text();
+      statusBox.textContent += "\n/api/me Status: " + meRes.status + "\n/api/me Body: " + meText;
+
       if (!meRes.ok) {
-        statusBox.textContent = "Nicht eingeloggt → zurück zum Login.";
-        setTimeout(() => location.href = "index.html", 800);
+        statusBox.textContent += "\n\nNicht eingeloggt → Weiterleitung zu index.html …";
+        setTimeout(() => location.href = "index.html", 1200);
         return;
       }
 
-      const me = await meRes.json();
+      let me;
+      try { me = JSON.parse(meText); } catch {
+        statusBox.textContent += "\n\nERROR: /api/me ist kein JSON.";
+        return;
+      }
+
       document.getElementById("userName").textContent = me.username;
 
-      // 2) Emails laden
-      statusBox.textContent = "Lade Emails von /api/emails …";
+      // /api/emails
+      statusBox.textContent += "\n\n3) Lade /api/emails …";
       const res = await fetch("/api/emails");
       const text = await res.text();
+      statusBox.textContent += "\n/api/emails Status: " + res.status + "\n/api/emails Body: " + text;
 
-      if (!res.ok) {
-        statusBox.textContent = "Fehler /api/emails (" + res.status + "): " + text;
-        return;
-      }
+      if (!res.ok) return;
 
       let data;
-      try { data = JSON.parse(text); }
-      catch {
-        statusBox.textContent = "Antwort ist kein JSON: " + text;
+      try { data = JSON.parse(text); } catch {
+        statusBox.textContent += "\n\nERROR: /api/emails ist kein JSON.";
         return;
       }
 
       const emails = data.emails || [];
 
       if (emails.length === 0) {
-        statusBox.textContent = "Noch keine Emails gespeichert.";
+        statusBox.textContent += "\n\nErgebnis: 0 Emails gespeichert.";
         listBox.innerHTML = "";
         return;
       }
 
-      statusBox.textContent = "Gefundene Emails: " + emails.length;
+      statusBox.textContent += "\n\nErgebnis: " + emails.length + " Emails gefunden ✅";
 
       const ul = document.createElement("ul");
       for (const item of emails) {
@@ -189,7 +191,7 @@
 
         const emailSpan = document.createElement("span");
         emailSpan.className = "email";
-        emailSpan.textContent = item.email || "";
+        emailSpan.textContent = (typeof item.email === "string") ? item.email : String(item.email);
 
         const timeSpan = document.createElement("span");
         timeSpan.className = "time";
@@ -217,6 +219,5 @@
       statusBox.textContent = "JS Fehler: " + (e?.message || e);
     });
   </script>
-
 </body>
 </html>
