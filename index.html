@@ -55,10 +55,17 @@
       display: none;
     }
 
-    .link {
-      margin-top: 15px;
+    .info {
+      background: #e6ffed;
+      border: 1px solid #9be7b2;
+      padding: 10px;
+      margin-bottom: 15px;
       font-size: 14px;
+      display: none;
+      color: #1b5e20;
     }
+
+    .link { margin-top: 15px; font-size: 14px; }
 
     .link a {
       color: #2196F3;
@@ -70,14 +77,15 @@
 
 <body>
 
-<!-- ✅ Auto-Redirect wenn eingeloggt -->
+<!-- ✅ Auto-Redirect, aber NICHT wenn ?loggedout=1 -->
 <script>
 (async () => {
   try {
+    const params = new URLSearchParams(location.search);
+    if (params.get("loggedout") === "1") return;
+
     const res = await fetch("/api/me");
-    if (res.ok) {
-      window.location.href = "dashboard.html";
-    }
+    if (res.ok) location.href = "dashboard.html";
   } catch {}
 })();
 </script>
@@ -85,6 +93,7 @@
 <div class="container">
   <h1>Anmelden</h1>
 
+  <div id="infoBox" class="info"></div>
   <div id="errorBox" class="error"></div>
 
   <form id="loginForm" novalidate>
@@ -106,10 +115,21 @@
 <script>
 const form = document.getElementById("loginForm");
 const errorBox = document.getElementById("errorBox");
+const infoBox = document.getElementById("infoBox");
+
+// Info anzeigen, wenn man gerade ausgeloggt wurde
+(() => {
+  const params = new URLSearchParams(location.search);
+  if (params.get("loggedout") === "1") {
+    infoBox.textContent = "Du wurdest ausgeloggt.";
+    infoBox.style.display = "block";
+  }
+})();
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorBox.style.display = "none";
+  infoBox.style.display = "none";
 
   const data = Object.fromEntries(new FormData(form));
 
@@ -121,10 +141,9 @@ form.addEventListener("submit", async (e) => {
     });
 
     if (res.ok) {
-      window.location.href = "dashboard.html";
+      location.href = "dashboard.html";
     } else {
-      const msg = await res.text();
-      errorBox.textContent = msg || "Login fehlgeschlagen.";
+      errorBox.textContent = await res.text();
       errorBox.style.display = "block";
     }
   } catch {
@@ -133,9 +152,11 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-document.getElementById("logoutLink").addEventListener("click", async () => {
+document.getElementById("logoutLink").addEventListener("click", async (e) => {
+  e.preventDefault();
   await fetch("/api/logout");
-  location.reload();
+  // ✅ NICHT reload; sondern mit flag, damit kein Auto-Redirect passiert
+  location.href = "index.html?loggedout=1";
 });
 </script>
 

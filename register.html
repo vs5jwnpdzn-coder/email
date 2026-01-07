@@ -55,10 +55,7 @@
       display: none;
     }
 
-    .link {
-      margin-top: 15px;
-      font-size: 14px;
-    }
+    .link { margin-top: 15px; font-size: 14px; }
 
     .link a {
       color: #2196F3;
@@ -70,14 +67,15 @@
 
 <body>
 
-<!-- ✅ Auto-Redirect wenn eingeloggt -->
+<!-- ✅ Auto-Redirect, aber NICHT wenn ?loggedout=1 -->
 <script>
 (async () => {
   try {
+    const params = new URLSearchParams(location.search);
+    if (params.get("loggedout") === "1") return;
+
     const res = await fetch("/api/me");
-    if (res.ok) {
-      window.location.href = "dashboard.html";
-    }
+    if (res.ok) location.href = "dashboard.html";
   } catch {}
 })();
 </script>
@@ -128,10 +126,9 @@ form.addEventListener("submit", async (e) => {
     });
 
     if (res.ok) {
-      window.location.href = "dashboard.html";
+      location.href = "dashboard.html";
     } else {
-      const msg = await res.text();
-      errorBox.textContent = msg || "Registrierung fehlgeschlagen.";
+      errorBox.textContent = await res.text();
       errorBox.style.display = "block";
     }
   } catch {
@@ -140,9 +137,10 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-document.getElementById("logoutLink").addEventListener("click", async () => {
+document.getElementById("logoutLink").addEventListener("click", async (e) => {
+  e.preventDefault();
   await fetch("/api/logout");
-  location.reload();
+  location.href = "index.html?loggedout=1";
 });
 </script>
 
