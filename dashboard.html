@@ -87,6 +87,7 @@
       font-size: 14px;
       color: #e53935;
       min-height: 18px;
+      word-break: break-word;
     }
 
     .msg.success { color: #4CAF50; }
@@ -117,10 +118,7 @@
     async function checkLogin() {
       try {
         const res = await fetch("/api/me");
-        if (!res.ok) {
-          location.href = "index.html";
-          return;
-        }
+        if (!res.ok) { location.href = "index.html"; return; }
         const data = await res.json();
         document.getElementById("userName").textContent = data.username;
       } catch {
@@ -155,8 +153,10 @@
           body: JSON.stringify({ email })
         });
 
+        const text = await res.text();
+
         if (!res.ok) {
-          msg.textContent = await res.text();
+          msg.textContent = text || "Senden fehlgeschlagen.";
           return;
         }
 

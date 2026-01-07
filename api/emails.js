@@ -39,6 +39,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true, emails });
   } catch (err) {
     console.error("EMAILS ERROR:", err);
-    return res.status(500).send("Serverfehler: " + (err?.message || String(err)));
+    return res
+      .status(500)
+      .send("Serverfehler (emails): " + (err?.message || String(err)));
   }
 }
