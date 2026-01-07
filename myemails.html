@@ -48,7 +48,6 @@
     }
 
     .btn-back { background: #2196F3; }
-    .btn-logout { background: #e53935; }
     .btn:hover { opacity: 0.9; }
 
     .card {
@@ -121,16 +120,19 @@
 </head>
 
 <body>
+
+  <!-- TOP LEFT -->
   <div class="top-left">
     Angemeldet als:
     <span class="username" id="userName">Lade…</span>
   </div>
 
+  <!-- TOP RIGHT: NUR Zurück -->
   <div class="top-right">
     <button class="btn btn-back" id="backBtn">Zurück</button>
-    <button class="btn btn-logout" id="logoutBtn">Logout</button>
   </div>
 
+  <!-- CENTER -->
   <div class="card">
     <div class="header">
       <h1>Meine Emails</h1>
@@ -163,15 +165,11 @@
     }
 
     async function loadEmails() {
-      // 1) login check
       const me = await requireLogin();
       if (!me) return;
 
-      // 2) load emails
       const res = await fetch("/api/emails", { credentials: "include" });
       if (!res.ok) {
-        // Wenn z.B. ausgeloggt:
-        if (res.status === 401) location.href = "index.html";
         listBox.innerHTML = `<div class="empty">Emails konnten nicht geladen werden.</div>`;
         countPill.textContent = "Emails: 0";
         return;
@@ -180,7 +178,6 @@
       const data = await res.json();
       const emails = data.emails || [];
 
-      // Counter oben
       countPill.textContent = "Emails: " + emails.length;
 
       if (emails.length === 0) {
@@ -214,15 +211,11 @@
       location.href = "dashboard.html";
     });
 
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try { await fetch("/api/logout", { credentials: "include" }); }
-      finally { location.href = "index.html?loggedout=1"; }
-    });
-
     loadEmails().catch(() => {
       listBox.innerHTML = `<div class="empty">Fehler beim Laden.</div>`;
       countPill.textContent = "Emails: 0";
     });
   </script>
+
 </body>
 </html>

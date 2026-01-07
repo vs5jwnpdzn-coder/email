@@ -108,10 +108,6 @@
     <a id="registerLink" href="register.html">Jetzt registrieren</a>
   </div>
 
-  <div class="link">
-    <a id="logoutLink">Logout</a>
-  </div>
-</div>
 
 <script>
 const form = document.getElementById("loginForm");
@@ -161,13 +157,6 @@ form.addEventListener("submit", async (e) => {
   }
 });
 
-document.getElementById("logoutLink").addEventListener("click", async (e) => {
-  e.preventDefault();
-  // ✅ Cookie wirklich löschen
-  await fetch("/api/logout", { credentials: "include" });
-
-  location.href = "index.html?loggedout=1";
-});
 </script>
 
 </body>

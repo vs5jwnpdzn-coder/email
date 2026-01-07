@@ -117,11 +117,6 @@
     <a id="loginLink" href="index.html">Jetzt anmelden</a>
   </div>
 
-  <div class="link">
-    <a id="logoutLink">Logout</a>
-  </div>
-</div>
-
 <script>
 const form = document.getElementById("registerForm");
 const errorBox = document.getElementById("errorBox");
@@ -261,12 +256,6 @@ form.addEventListener("submit", async (e) => {
     errorBox.textContent = "Server nicht erreichbar.";
     errorBox.style.display = "block";
   }
-});
-
-document.getElementById("logoutLink").addEventListener("click", async (e) => {
-  e.preventDefault();
-  await fetch("/api/logout", { credentials: "include" });
-  location.href = "index.html?loggedout=1";
 });
 
 // initial disable state

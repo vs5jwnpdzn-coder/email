@@ -1,152 +1,541 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Dashboard</title>
 
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
 
     body {
-      height: 100vh;
       margin: 0;
-      background: #f4f4f4;
+      min-height: 100vh;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(67,206,162,0.35), transparent 60%),
+        radial-gradient(1200px 600px at 80% 0%, rgba(24,90,157,0.35), transparent 55%),
+        linear-gradient(135deg, #f7f9fc, #eef3fb);
+      color: #111;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.75);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .topbar-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 14px 18px;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
 
-    .top-left {
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      font-size: 14px;
-      color: #333;
-      background: rgba(255,255,255,0.95);
-      padding: 8px 12px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-
-    .username { font-weight: bold; }
-
-    .top-right {
-      position: fixed;
-      top: 16px;
-      right: 16px;
+    .who {
       display: flex;
+      align-items: center;
       gap: 10px;
+      font-size: 14px;
+      color: #222;
     }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.06);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .username { font-weight: 700; }
 
     .btn {
       padding: 10px 14px;
-      border-radius: 8px;
+      border-radius: 10px;
       border: none;
       cursor: pointer;
       font-size: 14px;
       color: white;
+      transition: transform 0.08s ease, opacity 0.12s ease;
+    }
+    .btn:hover { opacity: 0.92; }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-mails { background: #1e88e5; }
+    .btn-logout { background: #e53935; }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 22px 18px 40px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
     }
 
-    .btn-mails { background: #2196F3; }
-    .btn-logout { background: #e53935; }
-    .btn:hover { opacity: 0.9; }
+    @media (max-width: 960px) {
+      .wrap { grid-template-columns: 1fr; }
+    }
 
     .card {
-      width: 420px;
-      max-width: 90vw;
-      background: white;
+      background: rgba(255,255,255,0.92);
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.10);
+      padding: 18px;
+    }
+
+    .hero {
+      padding: 22px;
+      border-radius: 18px;
+      background:
+        radial-gradient(600px 300px at 20% 10%, rgba(67,206,162,0.25), transparent 60%),
+        radial-gradient(600px 300px at 80% 0%, rgba(24,90,157,0.18), transparent 55%),
+        linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.75));
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .title {
+      margin: 0 0 8px 0;
+      font-size: 26px;
+      letter-spacing: -0.2px;
+    }
+
+    .subtitle {
+      margin: 0 0 16px 0;
+      color: #333;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 560px) {
+      .grid2 { grid-template-columns: 1fr; }
+    }
+
+    .stat {
+      background: rgba(0,0,0,0.03);
+      border: 1px solid rgba(0,0,0,0.06);
       border-radius: 14px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-      padding: 30px;
-      text-align: center;
+      padding: 12px;
+    }
+
+    .stat .label { font-size: 12px; color: #555; margin-bottom: 6px; }
+    .stat .value { font-size: 22px; font-weight: 800; color: #111; }
+    .stat .mini { margin-top: 6px; font-size: 12px; color: #666; }
+
+    .progress {
+      margin-top: 14px;
+      background: rgba(0,0,0,0.06);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.06);
+      height: 12px;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #43cea2, #1e88e5);
+      transition: width 0.35s ease;
+    }
+
+    .progress-meta {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .badgeRow {
+      margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(255,255,255,0.85);
+      color: #222;
+    }
+
+    .badge.locked {
+      opacity: 0.55;
+    }
+
+    .composer {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+    @media (max-width: 560px) {
+      .composer { grid-template-columns: 1fr; }
     }
 
     .email-input {
       width: 100%;
-      padding: 12px;
+      padding: 12px 14px;
       font-size: 14px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
+      border: 1px solid rgba(0,0,0,0.14);
+      border-radius: 12px;
       outline: none;
-      margin-bottom: 12px;
+      background: rgba(255,255,255,0.95);
+    }
+    .email-input:focus {
+      border-color: rgba(30,136,229,0.55);
+      box-shadow: 0 0 0 4px rgba(30,136,229,0.12);
     }
 
     .send-btn {
-      width: 100%;
-      padding: 12px;
-      font-size: 15px;
-      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      border-radius: 12px;
       border: none;
       cursor: pointer;
       color: white;
-      background: #4CAF50;
+      background: linear-gradient(135deg, #43cea2, #1e88e5);
+      font-weight: 700;
+      transition: transform 0.08s ease, opacity 0.12s ease;
+      white-space: nowrap;
     }
+    .send-btn:hover { opacity: 0.94; }
+    .send-btn:active { transform: translateY(1px); }
+    .send-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
     .msg {
-      margin-top: 12px;
-      font-size: 14px;
-      color: #e53935;
+      margin-top: 10px;
+      font-size: 13px;
       min-height: 18px;
       word-break: break-word;
+      color: #b71c1c;
+    }
+    .msg.success { color: #1b5e20; }
+
+    .side h2 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #111;
     }
 
-    .msg.success { color: #4CAF50; }
+    .why {
+      margin: 0;
+      padding-left: 18px;
+      color: #333;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .why li { margin: 8px 0; }
+
+    .list {
+      margin-top: 12px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.06);
+      background: rgba(0,0,0,0.02);
+      margin-bottom: 8px;
+    }
+    .row .left { min-width: 0; }
+    .row .email {
+      font-size: 13px;
+      color: #111;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 320px;
+    }
+    .row .time {
+      font-size: 12px;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .smallLink {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #1e88e5;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .smallLink:hover { text-decoration: underline; }
+
+    .note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #666;
+      line-height: 1.45;
+    }
   </style>
 </head>
 
 <body>
-  <div class="top-left">
-    Angemeldet als:
-    <span class="username" id="userName">Lade…</span>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="who">
+        <div class="pill">
+          Angemeldet als <span class="username" id="userName">Lade…</span>
+        </div>
+        <div class="pill" id="countPill">Emails: …</div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
+        <button class="btn btn-logout" id="logoutBtn">Logout</button>
+      </div>
+    </div>
   </div>
 
-  <div class="top-right">
-    <button class="btn btn-mails" id="myEmailsBtn">Meine Emails</button>
-    <button class="btn btn-logout" id="logoutBtn">Logout</button>
-  </div>
+  <div class="wrap">
+    <!-- LEFT: Hero + Eingabe -->
+    <div class="card hero">
+      <h1 class="title">Baue dir jetzt deine Email-Liste auf.</h1>
+      <p class="subtitle">
+        Je mehr du einträgst, desto wertvoller wird deine Liste. Starte klein – und sammle Schritt für Schritt.
+      </p>
 
-  <div class="card">
-    <input class="email-input" id="emailInput" type="email" placeholder="Email eingeben" required>
-    <button class="send-btn" id="sendBtn">Senden</button>
-    <div class="msg" id="msg"></div>
+      <div class="grid2">
+        <div class="stat">
+          <div class="label">Deine gespeicherten Emails</div>
+          <div class="value" id="countBig">…</div>
+          <div class="mini" id="countMini">Lade…</div>
+        </div>
+        <div class="stat">
+          <div class="label">Nächstes Ziel</div>
+          <div class="value" id="goalText">50</div>
+          <div class="mini" id="goalMini">Noch … bis zum nächsten Badge</div>
+        </div>
+      </div>
+
+      <div class="progress" aria-label="Fortschritt">
+        <div class="bar" id="bar"></div>
+      </div>
+      <div class="progress-meta">
+        <span id="progressLeft">0 / 50</span>
+        <span id="progressRight">0%</span>
+      </div>
+
+      <div class="badgeRow" id="badgeRow">
+        <!-- wird per JS gefüllt -->
+      </div>
+
+      <div class="composer">
+        <input
+          class="email-input"
+          id="emailInput"
+          type="email"
+          placeholder="Email eingeben (z.B. name@domain.de)"
+          required
+        >
+        <button class="send-btn" id="sendBtn">+ Hinzufügen</button>
+      </div>
+      <div class="msg" id="msg"></div>
+
+      <div class="note">
+        Tipp: Du kannst auch schnell mehrere Emails nacheinander hinzufügen – einfach Email eintippen und Enter drücken.
+      </div>
+    </div>
+
+    <!-- RIGHT: Motivation + Vorschau -->
+    <div class="card side">
+      <h2>Warum lohnt sich das?</h2>
+      <ul class="why">
+        <li>Du siehst sofort deinen Fortschritt und bleibst dran.</li>
+        <li>Du baust dir eine saubere Übersicht pro Account auf.</li>
+        <li>Du bekommst klare Rückmeldung, wenn eine Email bereits existiert.</li>
+      </ul>
+
+      <h2 style="margin-top:16px;">Zuletzt hinzugefügt</h2>
+      <div class="list" id="recentList">
+        <div class="row"><div class="left"><div class="email">Lade…</div></div><div class="time"></div></div>
+      </div>
+
+      <a class="smallLink" href="myemails.html">Alle anzeigen →</a>
+    </div>
   </div>
 
   <script>
     const msg = document.getElementById("msg");
+    const sendBtn = document.getElementById("sendBtn");
+    const emailInput = document.getElementById("emailInput");
+
+    const countPill = document.getElementById("countPill");
+    const countBig = document.getElementById("countBig");
+    const countMini = document.getElementById("countMini");
+
+    const bar = document.getElementById("bar");
+    const progressLeft = document.getElementById("progressLeft");
+    const progressRight = document.getElementById("progressRight");
+
+    const goalText = document.getElementById("goalText");
+    const goalMini = document.getElementById("goalMini");
+    const badgeRow = document.getElementById("badgeRow");
+    const recentList = document.getElementById("recentList");
+
+    const GOALS = [10, 25, 50, 100, 250];
+    const goal = 50; // Hauptziel für die Progressbar
+
+    function formatTime(ts) {
+      if (!ts) return "";
+      try { return new Date(ts).toLocaleString("de-DE"); } catch { return ""; }
+    }
+
+    function emailValid(email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    }
+
+    function setMsg(text, ok=false) {
+      msg.className = "msg" + (ok ? " success" : "");
+      msg.textContent = text || "";
+    }
+
+    function renderBadges(count) {
+      badgeRow.innerHTML = "";
+      for (const g of GOALS) {
+        const unlocked = count >= g;
+        const el = document.createElement("div");
+        el.className = "badge" + (unlocked ? "" : " locked");
+        el.textContent = unlocked ? `🏅 ${g}+ erreicht` : `🔒 ${g}+ Emails`;
+        badgeRow.appendChild(el);
+      }
+    }
+
+    function updateProgress(count) {
+      const pct = Math.max(0, Math.min(100, Math.round((count / goal) * 100)));
+      bar.style.width = pct + "%";
+      progressLeft.textContent = `${count} / ${goal}`;
+      progressRight.textContent = `${pct}%`;
+
+      // nächstes Ziel für Mini-Text
+      const next = GOALS.find(x => x > count) || null;
+      if (!next) {
+        goalText.textContent = "🎉";
+        goalMini.textContent = "Alle Badges freigeschaltet!";
+      } else {
+        goalText.textContent = String(next);
+        goalMini.textContent = `Noch ${next - count} bis zum nächsten Badge`;
+      }
+    }
 
     async function checkLogin() {
       try {
         const res = await fetch("/api/me", { credentials: "include" });
         if (!res.ok) {
           location.href = "index.html";
-          return;
+          return null;
         }
         const data = await res.json();
         document.getElementById("userName").textContent = data.username;
+        return data;
       } catch {
         location.href = "index.html";
+        return null;
       }
     }
 
+    async function loadEmailsSummary() {
+      try {
+        const res = await fetch("/api/emails", { credentials: "include" });
+        if (!res.ok) return { emails: [] };
+        const data = await res.json();
+        return { emails: data.emails || [] };
+      } catch {
+        return { emails: [] };
+      }
+    }
+
+    function renderRecent(emails) {
+      const recent = (emails || []).slice(0, 5);
+      recentList.innerHTML = "";
+      if (recent.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "row";
+        empty.innerHTML = `<div class="left"><div class="email">Noch keine Emails – leg los 👇</div></div><div class="time"></div>`;
+        recentList.appendChild(empty);
+        return;
+      }
+
+      for (const item of recent) {
+        const row = document.createElement("div");
+        row.className = "row";
+        const email = (item && item.email) ? String(item.email) : "";
+        const ts = item && item.ts ? item.ts : null;
+        row.innerHTML = `
+          <div class="left">
+            <div class="email">${email.replace(/</g,"&lt;").replace(/>/g,"&gt;")}</div>
+          </div>
+          <div class="time">${formatTime(ts)}</div>
+        `;
+        recentList.appendChild(row);
+      }
+    }
+
+    async function refreshUI() {
+      const { emails } = await loadEmailsSummary();
+      const count = emails.length;
+
+      countPill.textContent = "Emails: " + count;
+      countBig.textContent = String(count);
+      countMini.textContent = count === 0 ? "Starte mit deiner ersten Email." : "Weiter so – du bist im Flow.";
+
+      renderBadges(count);
+      updateProgress(count);
+      renderRecent(emails);
+    }
+
+    // Logout
     document.getElementById("logoutBtn").addEventListener("click", async () => {
-      try { await fetch("/api/logout", { credentials: "include" }); }
-      finally { location.href = "index.html?loggedout=1"; }
+      try {
+        await fetch("/api/logout", { credentials: "include" });
+      } finally {
+        location.href = "index.html?loggedout=1";
+      }
     });
 
+    // Meine Emails
     document.getElementById("myEmailsBtn").addEventListener("click", () => {
       location.href = "myemails.html";
     });
 
-    document.getElementById("sendBtn").addEventListener("click", async () => {
-      const input = document.getElementById("emailInput");
-      const email = input.value.trim();
+    // Senden
+    async function sendEmail() {
+      const email = emailInput.value.trim().toLowerCase();
+      setMsg("");
 
-      msg.className = "msg";
-      msg.textContent = "";
+      if (!email) return setMsg("Bitte eine Email eingeben.");
+      if (!emailValid(email)) return setMsg("Bitte eine gültige Email-Adresse eingeben.");
 
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email) return (msg.textContent = "Bitte eine Email eingeben.");
-      if (!emailRegex.test(email)) return (msg.textContent = "Bitte eine gültige Email-Adresse eingeben.");
+      sendBtn.disabled = true;
 
       try {
         const res = await fetch("/api/send", {
@@ -157,21 +546,36 @@
         });
 
         const text = await res.text();
-        if (!res.ok) return (msg.textContent = text || "Senden fehlgeschlagen.");
 
-        msg.textContent = "Email gespeichert ✅";
-        msg.classList.add("success");
-        input.value = "";
+        if (!res.ok) {
+          setMsg(text || "Senden fehlgeschlagen.");
+          return;
+        }
+
+        setMsg("Gespeichert ✅ Weiter geht’s!", true);
+        emailInput.value = "";
+
+        await refreshUI();
       } catch {
-        msg.textContent = "Server nicht erreichbar.";
+        setMsg("Server nicht erreichbar.");
+      } finally {
+        sendBtn.disabled = false;
       }
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", sendEmail);
+    emailInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendEmail();
     });
 
-    document.getElementById("emailInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") document.getElementById("sendBtn").click();
-    });
-
-    checkLogin();
+    // init
+    (async () => {
+      const me = await checkLogin();
+      if (!me) return;
+      goalText.textContent = String(goal);
+      await refreshUI();
+      emailInput.focus();
+    })();
   </script>
 </body>
 </html>
