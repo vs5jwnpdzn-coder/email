@@ -14,8 +14,8 @@
       background:
         radial-gradient(1200px 600px at 20% 10%, rgba(67,206,162,0.35), transparent 60%),
         radial-gradient(1200px 600px at 80% 0%, rgba(24,90,157,0.35), transparent 55%),
-        linear-gradient(135deg, #f7f9fc, #eef3fb);
-      color: #111;
+        linear-gradient(135deg, #0b1220, #0f1c33);
+      color: #fff;
     }
 
     .topbar {
@@ -23,8 +23,8 @@
       top: 0;
       z-index: 50;
       backdrop-filter: blur(10px);
-      background: rgba(255,255,255,0.85);
-      border-bottom: 1px solid rgba(0,0,0,0.06);
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
     }
 
     .topbar-inner {
@@ -42,15 +42,15 @@
       align-items: center;
       gap: 10px;
       font-size: 14px;
-      color: #222;
+      color: rgba(255,255,255,0.92);
       flex-wrap: wrap;
     }
 
     .pill {
       padding: 8px 12px;
       border-radius: 999px;
-      background: rgba(0,0,0,0.05);
-      border: 1px solid rgba(0,0,0,0.06);
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
       font-size: 13px;
       white-space: nowrap;
     }
@@ -64,6 +64,7 @@
       cursor: pointer;
       font-size: 14px;
       color: white;
+      transition: opacity 0.12s ease;
     }
 
     .btn-mails { background: #1e88e5; }
@@ -73,37 +74,66 @@
     .wrap {
       max-width: 1000px;
       margin: 0 auto;
-      padding: 80px 18px;
+      padding: 70px 18px 90px;
       display: flex;
       justify-content: center;
     }
 
     .card {
       width: 100%;
-      max-width: 620px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 20px;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 20px 45px rgba(0,0,0,0.12);
-      padding: 40px 34px 36px;
+      max-width: 720px;
+      background: rgba(0,0,0,0.22);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.55);
+      padding: 42px 34px 36px;
       text-align: center;
     }
 
-    .headline {
-      font-size: 38px;
+    /* HERO */
+    .hero {
+      font-size: 44px;
       font-weight: 900;
-      letter-spacing: 1px;
-      margin-bottom: 30px;
+      letter-spacing: 0.6px;
+      margin: 2px 0 10px;
+      line-height: 1.05;
+      color: #ffffff;
+      text-shadow:
+        0 2px 0 rgba(0,0,0,0.35),
+        0 18px 55px rgba(30,136,229,0.30),
+        0 18px 55px rgba(67,206,162,0.20);
+    }
+
+    .subhero {
+      margin: 0 0 22px 0;
+      font-size: 14px;
+      color: rgba(255,255,255,0.80);
+      line-height: 1.45;
+    }
+
+    .avg {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      font-size: 18px;
+      font-weight: 900;
+      color: rgba(255,255,255,0.96);
+      display: inline-block;
+      box-shadow: 0 18px 55px rgba(0,0,0,0.25);
     }
 
     .composer {
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 12px;
+      margin-top: 10px;
     }
 
     @media (max-width: 560px) {
       .composer { grid-template-columns: 1fr; }
+      .hero { font-size: 38px; }
     }
 
     .email-input {
@@ -111,13 +141,19 @@
       padding: 14px 16px;
       font-size: 15px;
       border-radius: 14px;
-      border: 1px solid rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.18);
       outline: none;
+      background: rgba(0,0,0,0.25);
+      color: #fff;
+    }
+
+    .email-input::placeholder {
+      color: rgba(255,255,255,0.55);
     }
 
     .email-input:focus {
-      border-color: #1e88e5;
-      box-shadow: 0 0 0 4px rgba(30,136,229,0.15);
+      border-color: rgba(30,136,229,0.85);
+      box-shadow: 0 0 0 4px rgba(30,136,229,0.18);
     }
 
     .email-input.ok {
@@ -132,7 +168,7 @@
     .send-btn {
       padding: 14px 18px;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 800;
       border-radius: 14px;
       border: none;
       cursor: pointer;
@@ -145,6 +181,14 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
+
+    .msg {
+      margin-top: 14px;
+      font-size: 14px;
+      min-height: 18px;
+      color: #ff9b9b;
+    }
+    .msg.success { color: #9dffb0; }
 
     .badge-dot{
       display:inline-flex;
@@ -162,77 +206,103 @@
     }
     .badge-hidden{ display:none; }
 
-    /* ✅ TOASTS */
-    .toast-wrap{
+    /* ✅ Nutzungsbedingungen Modal */
+    .modal-backdrop{
       position: fixed;
-      top: 18px;
-      right: 18px;
+      inset: 0;
+      background: rgba(0,0,0,0.62);
+      backdrop-filter: blur(8px);
       z-index: 9999;
-      display: grid;
-      gap: 10px;
-      pointer-events: none;
-    }
-    .toast{
-      pointer-events: auto;
-      min-width: 260px;
-      max-width: 360px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(0,0,0,0.10);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.14);
-      background: rgba(255,255,255,0.96);
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      animation: toastIn 160ms ease-out;
-    }
-    @keyframes toastIn{
-      from{ transform: translateY(-6px); opacity: 0; }
-      to{ transform: translateY(0); opacity: 1; }
-    }
-    .toast .icon{
-      width: 22px;
-      height: 22px;
-      border-radius: 7px;
-      display: inline-flex;
       align-items: center;
       justify-content: center;
+      padding: 18px;
+    }
+    .modal{
+      width: 100%;
+      max-width: 760px;
+      background: rgba(12,18,32,0.98);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 26px 70px rgba(0,0,0,0.65);
+      overflow: hidden;
+      color: rgba(255,255,255,0.92);
+    }
+    .modal-head{
+      padding: 16px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .modal-title{
+      margin: 0;
+      font-size: 16px;
       font-weight: 900;
       color: #fff;
-      flex: 0 0 auto;
-      margin-top: 1px;
+      letter-spacing: 0.2px;
     }
-    .toast .txt{
+    .modal-body{
+      padding: 16px 18px;
       font-size: 14px;
-      color: #111;
-      line-height: 1.25;
-      word-break: break-word;
+      line-height: 1.5;
+      max-height: 56vh;
+      overflow: auto;
     }
-    .toast.success { border-color: rgba(67,206,162,0.40); }
-    .toast.success .icon{ background: #43cea2; }
-
-    .toast.warn { border-color: rgba(255,193,7,0.55); }
-    .toast.warn .icon{ background: #ffc107; color:#111; }
-
-    .toast.error { border-color: rgba(229,57,53,0.35); }
-    .toast.error .icon{ background: #e53935; }
-
-    .toast .x{
-      margin-left: auto;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      font-size: 16px;
-      line-height: 1;
-      opacity: 0.55;
+    .modal-body ul{ margin: 10px 0 0 18px; }
+    .modal-body li{ margin: 6px 0; }
+    .modal-foot{
+      padding: 14px 18px;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      display:flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
     }
-    .toast .x:hover{ opacity: 0.9; }
+    .btn-accept{
+      background: linear-gradient(135deg, #43cea2, #1e88e5);
+      font-weight: 900;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .btn-decline{
+      background: #e53935;
+      font-weight: 900;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .hide { display: none; }
   </style>
 </head>
 
 <body>
-  <!-- ✅ Toast container -->
-  <div class="toast-wrap" id="toastWrap"></div>
+  <!-- ✅ Nutzungsbedingungen Popup -->
+  <div class="modal-backdrop hide" id="tosBackdrop">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 class="modal-title">Nutzungsbedingungen</h2>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-top:0"><b>Bitte akzeptiere die Nutzungsbedingungen, um fortzufahren.</b></p>
+        <ul>
+          <li>Du gibst nur Emails ein, die dir gehören oder die du verwenden darfst.</li>
+          <li>Missbrauch (Spam / Fake-Daten) kann zum Ausschluss führen.</li>
+          <li>Keine Garantie auf Auszahlungen; Benachrichtigungen nach Verfügbarkeit.</li>
+          <li>Du stimmst der Verarbeitung deiner Daten gemäß diesen Regeln zu.</li>
+        </ul>
+        <p style="margin:12px 0 0; color: rgba(255,255,255,0.65); font-size: 12px;">
+          Text kannst du jederzeit anpassen.
+        </p>
+      </div>
+
+      <div class="modal-foot">
+        <button class="btn btn-decline" id="tosDeclineBtn">Ablehnen</button>
+        <button class="btn btn-accept" id="tosAcceptBtn">Akzeptieren</button>
+      </div>
+    </div>
+  </div>
 
   <div class="topbar">
     <div class="topbar-inner">
@@ -256,7 +326,8 @@
 
   <div class="wrap">
     <div class="card">
-      <div class="headline">EMAIL = GELD</div>
+      <div class="hero">BIS ZU 10.000€<br>MIT EINER EMAIL</div>
+      <p class="subhero">Trag eine Email ein & sichere dir deine Chance.</p>
 
       <div class="composer">
         <input
@@ -269,46 +340,31 @@
         >
         <button id="sendBtn" class="send-btn">Hinzufügen</button>
       </div>
+
+      <div id="msg" class="msg"></div>
+
+      <div class="avg">IM DURCHSCHNITT 2,12€ PRO EMAIL</div>
     </div>
   </div>
 
   <script>
+    const msg = document.getElementById("msg");
     const sendBtn = document.getElementById("sendBtn");
     const emailInput = document.getElementById("emailInput");
     const countPill = document.getElementById("countPill");
     const inboxBadge = document.getElementById("inboxBadge");
-    const toastWrap = document.getElementById("toastWrap");
+
+    // TOS
+    const tosBackdrop = document.getElementById("tosBackdrop");
+    const tosAcceptBtn = document.getElementById("tosAcceptBtn");
+    const tosDeclineBtn = document.getElementById("tosDeclineBtn");
 
     let inFlight = false;
     const emailValid = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-    /* ✅ Toast helper */
-    function showToast(type, text, ms = 2400) {
-      const t = document.createElement("div");
-      t.className = "toast " + type;
-
-      const icon = document.createElement("div");
-      icon.className = "icon";
-      icon.textContent = type === "success" ? "✓" : (type === "warn" ? "!" : "✕");
-
-      const txt = document.createElement("div");
-      txt.className = "txt";
-      txt.textContent = text || "";
-
-      const x = document.createElement("button");
-      x.className = "x";
-      x.innerHTML = "&times;";
-      x.onclick = () => t.remove();
-
-      t.appendChild(icon);
-      t.appendChild(txt);
-      t.appendChild(x);
-
-      toastWrap.appendChild(t);
-
-      window.setTimeout(() => {
-        if (t.isConnected) t.remove();
-      }, ms);
+    function setMsg(text, ok=false) {
+      msg.className = "msg" + (ok ? " success" : "");
+      msg.textContent = text || "";
     }
 
     function flashInput(state) {
@@ -319,10 +375,7 @@
 
     async function checkLogin() {
       const res = await fetch("/api/me?t=" + Date.now(), { credentials: "include", cache: "no-store" });
-      if (!res.ok) {
-        location.href = "index.html";
-        return null;
-      }
+      if (!res.ok) { location.href = "index.html"; return null; }
       const data = await res.json();
       document.getElementById("userName").textContent = data.username;
       return data;
@@ -337,12 +390,8 @@
 
     async function refreshInboxBadge() {
       try {
-        const res = await fetch("/api/inbox?t=" + Date.now(), {
-          credentials: "include",
-          cache: "no-store"
-        });
+        const res = await fetch("/api/inbox?t=" + Date.now(), { credentials: "include", cache: "no-store" });
         if (!res.ok) return;
-
         const data = await res.json();
         const n = Number(data.unreadCount || 0);
 
@@ -356,22 +405,17 @@
       } catch {}
     }
 
-    function looksLikeDuplicate(text) {
-      const t = String(text || "").toLowerCase();
-      return t.includes("bereits") || t.includes("schon") || t.includes("duplicate") || t.includes("duplikat");
-    }
-
     async function sendEmail() {
       if (inFlight) return;
 
       const email = emailInput.value.trim().toLowerCase();
+      setMsg("");
 
       if (!email || !emailValid(email)) {
         flashInput("bad");
         emailInput.focus();
         emailInput.select();
-        showToast("error", "Ungültige Email-Adresse.");
-        return;
+        return setMsg("Ungültige Email-Adresse.");
       }
 
       inFlight = true;
@@ -386,41 +430,77 @@
         });
 
         const text = await res.text();
-
         if (!res.ok) {
           flashInput("bad");
+          setMsg(text || "Fehler beim Speichern.");
           emailInput.focus();
           emailInput.select();
-
-          // ✅ Duplikat als gelber Toast
-          if (res.status === 409 || looksLikeDuplicate(text)) {
-            showToast("warn", "Diese Email hast du schon gespeichert.");
-          } else {
-            showToast("error", text || "Fehler beim Speichern.");
-          }
           return;
         }
 
         flashInput("ok");
-        showToast("success", "✅ Email gespeichert");
+        setMsg("Gespeichert ✅", true);
         emailInput.value = "";
         await refreshCount();
         emailInput.focus();
       } catch {
         flashInput("bad");
-        showToast("error", "Server nicht erreichbar.");
+        setMsg("Server nicht erreichbar.");
       } finally {
         inFlight = false;
         sendBtn.disabled = false;
       }
     }
 
+    // ✅ TOS: pro User in localStorage
+    function tosKey(username) {
+      return "tosAccepted:" + String(username || "").toLowerCase();
+    }
+
+    function showTos() {
+      tosBackdrop.classList.remove("hide");
+      setTimeout(() => tosAcceptBtn.focus(), 50);
+    }
+
+    function hideTos() {
+      tosBackdrop.classList.add("hide");
+    }
+
+    async function ensureTosAccepted(username) {
+      const key = tosKey(username);
+      const accepted = localStorage.getItem(key) === "1";
+      if (accepted) return true;
+
+      showTos();
+
+      return await new Promise(resolve => {
+        const accept = () => {
+          localStorage.setItem(key, "1");
+          hideTos();
+          cleanup();
+          resolve(true);
+        };
+
+        const decline = async () => {
+          cleanup();
+          await fetch("/api/logout", { credentials: "include" }).catch(() => {});
+          location.href = "index.html?tos=declined";
+          resolve(false);
+        };
+
+        function cleanup() {
+          tosAcceptBtn.removeEventListener("click", accept);
+          tosDeclineBtn.removeEventListener("click", decline);
+        }
+
+        tosAcceptBtn.addEventListener("click", accept);
+        tosDeclineBtn.addEventListener("click", decline);
+      });
+    }
+
     sendBtn.addEventListener("click", sendEmail);
     emailInput.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendEmail();
-      }
+      if (e.key === "Enter") { e.preventDefault(); sendEmail(); }
     });
 
     document.getElementById("myEmailsBtn").onclick = () => location.href = "myemails.html";
@@ -444,6 +524,10 @@
     (async () => {
       const me = await checkLogin();
       if (!me) return;
+
+      // ✅ Erst Nutzungsbedingungen akzeptieren, dann Dashboard freigeben
+      const ok = await ensureTosAccepted(me.username);
+      if (!ok) return;
 
       await refreshCount();
       await refreshInboxBadge();
