@@ -259,13 +259,12 @@
     <!-- LEFT -->
     <div class="card">
       <div class="tabs">
-        <!-- ✅ FIX 1: Default Active = Alle Emails -->
         <div class="tab" id="tabUsers">User Verwaltung</div>
         <div class="tab active" id="tabAll">Alle Emails</div>
         <div class="tab" id="tabNotify">Benachrichtigen</div>
       </div>
 
-      <!-- USERS PANEL (✅ FIX 2: hidden by default) -->
+      <!-- USERS PANEL -->
       <div id="usersPanel" class="hide">
         <h1>User Verwaltung</h1>
         <p class="hint">Suche → User auswählen → Laden / Emails löschen / Umbenennen / User löschen.</p>
@@ -287,13 +286,22 @@
         <div id="statusUsers" class="status"></div>
       </div>
 
-      <!-- ALL EMAILS PANEL (✅ FIX 2: visible by default) -->
+      <!-- ALL EMAILS PANEL -->
       <div id="allPanel">
         <h1>Alle Emails</h1>
         <p class="hint">Alle gespeicherten Emails zusammen – jeweils mit Username.</p>
 
         <div class="controls">
-          <button class="btn btn-load" id="loadAllBtn">Alle laden</button>
+          <div style="display:grid; grid-template-columns: 1fr 220px; gap:10px;">
+            <input id="allSearchInput" type="text" placeholder="Suche (Email/User) …" autocomplete="off" />
+            <select id="domainSelect" disabled>
+              <option value="">Domain: alle</option>
+            </select>
+          </div>
+
+          <div class="btnGrid" style="grid-template-columns: 1fr;">
+            <button class="btn btn-load" id="loadAllBtn">Aktualisieren</button>
+          </div>
         </div>
 
         <div id="statusAll" class="status"></div>
@@ -333,6 +341,7 @@
   </div>
 
   <script>
+    // Header
     const adminName = document.getElementById("adminName");
 
     // Tabs
@@ -356,6 +365,8 @@
     // All emails
     const loadAllBtn = document.getElementById("loadAllBtn");
     const statusAll = document.getElementById("statusAll");
+    const allSearchInput = document.getElementById("allSearchInput");
+    const domainSelect = document.getElementById("domainSelect");
 
     // Notify
     const notifyUserSelect = document.getElementById("notifyUserSelect");
@@ -371,6 +382,7 @@
 
     let loading = false;
     let allUsers = [];
+    let allEmailsCache = [];
 
     function setStatus(el, text, ok=false) {
       el.className = "status" + (ok ? " ok" : "");
@@ -391,6 +403,8 @@
 
       // ALL tab
       loadAllBtn.disabled = isLoading;
+      allSearchInput.disabled = isLoading;
+      domainSelect.disabled = isLoading || !allEmailsCache.length;
 
       // NOTIFY tab
       notifyUserSelect.disabled = isLoading;
@@ -421,25 +435,23 @@
 
     function renderUserOptions(selectEl, users, keepValue=false) {
       const prev = keepValue ? selectEl.value : "";
-      selectEl.innerHTML = `<option value="">— auswählen —</option>` + users
-        .map(u => `<option value="${u.replace(/"/g, "&quot;")}">${u}</option>`)
+      selectEl.innerHTML = `<option value="">— auswählen —</option>` + (users || [])
+        .map(u => `<option value="${String(u).replace(/"/g, "&quot;")}">${u}</option>`)
         .join("");
       if (prev && users.includes(prev)) selectEl.value = prev;
     }
 
     function applySearchFilter() {
       const q = (searchInput.value || "").trim().toLowerCase();
-      const filtered = !q ? allUsers : allUsers.filter(u => u.includes(q));
+      const filtered = !q ? allUsers : allUsers.filter(u => String(u).toLowerCase().includes(q));
       renderUserOptions(userSelect, filtered, false);
       userSelect.value = "";
-      setLoading(false);
       clearList("Emails");
       setStatus(statusUsers, filtered.length ? "Gefiltert ✅" : "Keine Treffer.", true);
     }
 
     async function loadUsers() {
       setStatus(statusUsers, "Lade Users…");
-      setStatus(statusAll, "");
       setStatus(statusNotify, "");
 
       userSelect.innerHTML = `<option>Users laden…</option>`;
@@ -643,133 +655,192 @@
       }
     }
 
+    // -------- ALL EMAILS FILTERS ----------
+    function getDomain(email) {
+      const s = String(email || "").toLowerCase();
+      const at = s.lastIndexOf("@");
+      if (at === -1) return "";
+      return s.slice(at + 1).trim();
+    }
+
+    function buildDomainOptions(items) {
+      const domains = new Set();
+      for (const it of items || []) {
+        const d = getDomain(it.email);
+        if (d) domains.add(d);
+      }
+      const list = Array.from(domains).sort();
+
+      domainSelect.innerHTML =
+        `<option value="">Domain: alle</option>` +
+        list.map(d => `<option value="${d.replace(/"/g, "&quot;")}">${d}</option>`).join("");
+
+      domainSelect.disabled = false;
+    }
+
+    function applyAllFilters() {
+      const q = (allSearchInput.value || "").trim().toLowerCase();
+      const dom = (domainSelect.value || "").trim().toLowerCase();
+
+      let filtered = allEmailsCache;
+
+      if (dom) filtered = filtered.filter(it => getDomain(it.email) === dom);
+
+      if (q) {
+        filtered = filtered.filter(it =>
+          String(it.email || "").toLowerCase().includes(q) ||
+          String(it.username || "").toLowerCase().includes(q)
+        );
+      }
+
+      renderAllEmails(filtered);
+    }
+
     function renderAllEmails(items) {
-  listTitle.textContent = "Alle Emails";
-  countPill.textContent = "Emails: " + (items?.length || 0);
+      listTitle.textContent = "Alle Emails";
+      countPill.textContent = "Emails: " + (items?.length || 0);
 
-  if (!items || items.length === 0) {
-    listBox.innerHTML = `<div class="empty">Keine Emails gefunden.</div>`;
-    return;
-  }
-
-  const ul = document.createElement("ul");
-
-  for (const it of items) {
-    const li = document.createElement("li");
-
-    const left = document.createElement("div");
-    left.className = "left";
-
-    const email = document.createElement("div");
-    email.className = "email";
-    email.textContent = it.email;
-
-    const sub = document.createElement("div");
-    sub.className = "sub";
-    sub.textContent = "User: " + it.username;
-
-    left.appendChild(email);
-    left.appendChild(sub);
-
-    const meta = document.createElement("div");
-    meta.className = "meta";
-
-    // ✅ used checkbox
-    const label = document.createElement("label");
-    label.style.display = "inline-flex";
-    label.style.alignItems = "center";
-    label.style.gap = "6px";
-    label.style.fontSize = "12px";
-    label.style.color = "#444";
-
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = !!it.used;
-
-    cb.addEventListener("change", async () => {
-      cb.disabled = true;
-      try {
-        await fetch("/api/admin?action=email-used", {
-          method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: it.username, email: it.email, used: cb.checked })
-        });
-      } finally {
-        cb.disabled = false;
+      if (!items || items.length === 0) {
+        listBox.innerHTML = `<div class="empty">Keine Emails gefunden.</div>`;
+        return;
       }
-    });
 
-    label.appendChild(cb);
-    label.appendChild(document.createTextNode("benutzt"));
+      const ul = document.createElement("ul");
 
-    // 🗑 delete button
-    const del = document.createElement("button");
-    del.textContent = "Löschen";
-    del.className = "btn";
-    del.style.background = "#e53935";
-    del.style.padding = "8px 10px";
-    del.style.borderRadius = "10px";
-    del.style.fontSize = "12px";
+      for (const it of items) {
+        const li = document.createElement("li");
 
-    del.addEventListener("click", async () => {
-      const ok = confirm(`Email löschen?\n\n${it.email}\nUser: ${it.username}`);
-      if (!ok) return;
+        const left = document.createElement("div");
+        left.className = "left";
 
-      del.disabled = true;
-      try {
-        const res = await fetch("/api/admin?action=emails", {
-          method: "DELETE",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: it.username, email: it.email })
+        const email = document.createElement("div");
+        email.className = "email";
+        email.textContent = it.email;
+
+        const sub = document.createElement("div");
+        sub.className = "sub";
+        sub.textContent = "User: " + it.username;
+
+        left.appendChild(email);
+        left.appendChild(sub);
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        // used checkbox
+        const label = document.createElement("label");
+        label.style.display = "inline-flex";
+        label.style.alignItems = "center";
+        label.style.gap = "6px";
+        label.style.fontSize = "12px";
+        label.style.color = "#444";
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!it.used;
+
+        cb.addEventListener("change", async () => {
+          cb.disabled = true;
+          try {
+            const res = await fetch("/api/admin?action=email-used", {
+              method: "PATCH",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: it.username, email: it.email, used: cb.checked })
+            });
+            if (!res.ok) {
+              cb.checked = !cb.checked;
+              alert(await res.text());
+            }
+          } finally {
+            cb.disabled = false;
+          }
         });
-        if (res.ok) {
-          // UI sofort aktualisieren
-          li.remove();
-          countPill.textContent = "Emails: " + (ul.querySelectorAll("li").length);
-        } else {
-          alert(await res.text());
-        }
-      } finally {
-        del.disabled = false;
+
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode("benutzt"));
+
+        // delete button
+        const del = document.createElement("button");
+        del.textContent = "Löschen";
+        del.className = "btn";
+        del.style.background = "#e53935";
+        del.style.padding = "8px 10px";
+        del.style.borderRadius = "10px";
+        del.style.fontSize = "12px";
+
+        del.addEventListener("click", async () => {
+          const ok = confirm(`Email löschen?\n\n${it.email}\nUser: ${it.username}`);
+          if (!ok) return;
+
+          del.disabled = true;
+          try {
+            const res = await fetch("/api/admin?action=emails", {
+              method: "DELETE",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ username: it.username, email: it.email })
+            });
+
+            if (res.ok) {
+              // auch Cache updaten, damit Filter danach stimmt
+              allEmailsCache = allEmailsCache.filter(e => !(e.username === it.username && e.email === it.email));
+              applyAllFilters();
+              setStatus(statusAll, "Email gelöscht ✅", true);
+            } else {
+              alert(await res.text());
+            }
+          } finally {
+            del.disabled = false;
+          }
+        });
+
+        const timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+        timeSpan.textContent = formatTime(it.ts);
+
+        meta.appendChild(label);
+        meta.appendChild(timeSpan);
+        meta.appendChild(del);
+
+        li.appendChild(left);
+        li.appendChild(meta);
+        ul.appendChild(li);
       }
-    });
 
-    const timeSpan = document.createElement("span");
-    timeSpan.className = "time";
-    timeSpan.textContent = formatTime(it.ts);
-
-    meta.appendChild(label);
-    meta.appendChild(timeSpan);
-    meta.appendChild(del);
-
-    li.appendChild(left);
-    li.appendChild(meta);
-    ul.appendChild(li);
-  }
-
-  listBox.innerHTML = "";
-  listBox.appendChild(ul);
-}
+      listBox.innerHTML = "";
+      listBox.appendChild(ul);
+    }
 
     async function loadAllEmails() {
       setLoading(true);
       setStatus(statusAll, "Lade alle Emails…");
 
       try {
-        const res = await fetch("/api/admin?action=all-emails&limit=1000", { credentials: "include" });
+        const res = await fetch("/api/admin?action=all-emails&limit=5000", { credentials: "include" });
         const text = await res.text();
 
         if (!res.ok) {
           setStatus(statusAll, text || "Konnte nicht laden.", false);
+          allEmailsCache = [];
+          domainSelect.innerHTML = `<option value="">Domain: alle</option>`;
+          domainSelect.disabled = true;
           renderAllEmails([]);
           return;
         }
 
         const data = JSON.parse(text);
-        setStatus(statusAll, `Geladen ✅ (gesamt: ${data.total ?? 0}, angezeigt: ${(data.emails || []).length})`, true);
-        renderAllEmails(data.emails || []);
+        allEmailsCache = data.emails || [];
+
+        buildDomainOptions(allEmailsCache);
+
+        setStatus(
+          statusAll,
+          `Geladen ✅ (gesamt: ${data.total ?? allEmailsCache.length}, angezeigt: ${allEmailsCache.length})`,
+          true
+        );
+
+        applyAllFilters();
       } catch {
         setStatus(statusAll, "Server nicht erreichbar.", false);
       } finally {
@@ -852,6 +923,8 @@
         tabAll.classList.add("active");
         allPanel.classList.remove("hide");
         clearList("Alle Emails");
+        // direkt die gefilterte Liste zeigen (falls schon geladen)
+        if (allEmailsCache.length) applyAllFilters();
       } else {
         tabNotify.classList.add("active");
         notifyPanel.classList.remove("hide");
@@ -860,11 +933,11 @@
       }
     }
 
+    // Events
     tabUsers.addEventListener("click", () => activate("users"));
     tabAll.addEventListener("click", () => activate("all"));
     tabNotify.addEventListener("click", () => activate("notify"));
 
-    // Events
     userSelect.addEventListener("change", () => {
       const enabled = !!userSelect.value && !loading;
       loadBtn.disabled = !enabled;
@@ -876,6 +949,16 @@
     searchInput.addEventListener("input", () => {
       if (!allUsers.length) return;
       applySearchFilter();
+    });
+
+    allSearchInput.addEventListener("input", () => {
+      if (!allEmailsCache.length) return;
+      applyAllFilters();
+    });
+
+    domainSelect.addEventListener("change", () => {
+      if (!allEmailsCache.length) return;
+      applyAllFilters();
     });
 
     loadBtn.addEventListener("click", () => loadEmailsForUser(userSelect.value));
@@ -906,10 +989,11 @@
       if (!me) return;
 
       clearList("Alle Emails");
+
       await loadUsers();
       updatePreview();
 
-      // ✅ FIX 3: Start direkt in "Alle Emails" + automatisch laden
+      // Start direkt in "Alle Emails" + automatisch laden
       activate("all");
       await loadAllEmails();
 
